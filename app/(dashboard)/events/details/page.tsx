@@ -709,7 +709,7 @@ function EventDetails() {
                             className="p-6 flex items-start gap-6 md:gap-8 group hover:bg-background/40 transition-colors"
                           >
                             <div className="shrink-0">
-                              <div className="w-14 h-14 rounded-full bg-white/95 text-black flex items-center justify-center font-bold text-xl border border-border/30">
+                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 text-primary flex items-center justify-center font-bold text-xl shadow-sm group-hover:border-primary/40 group-hover:scale-105 transition-all">
                                 {response.date ? new Date(response.date).getDate() : idx + 1}
                               </div>
                             </div>

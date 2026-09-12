@@ -402,15 +402,15 @@ function LeadDetails() {
                       className="p-6 flex items-start gap-6 md:gap-8 group hover:bg-background/40 transition-colors"
                     >
                       <div className="shrink-0">
-                        <Avatar className="size-14 rounded-full border border-border/60 shadow-xs">
+                        <Avatar className="size-14 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-sm group-hover:border-primary/40 group-hover:scale-105 transition-all overflow-hidden">
                           {lead.avatar && lead.avatar.startsWith("http") && (
                             <AvatarImage
                               src={lead.avatar}
                               alt={lead.name}
-                              className="object-cover"
+                              className="object-cover size-full rounded-2xl"
                             />
                           )}
-                          <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                          <AvatarFallback className="bg-transparent text-primary font-bold text-xl rounded-2xl">
                             {lead.name
                               ? lead.name
                                   .split(" ")

@@ -604,7 +604,7 @@ function Users() {
                   >
                     {/* Left Badge - Avatar Initials */}
                     <div className="shrink-0">
-                      <div className="w-14 h-14 rounded-2xl bg-white/95 text-black flex items-center justify-center font-bold text-xl border border-border/30 shadow-xs">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 text-primary flex items-center justify-center font-bold text-xl shadow-sm group-hover:border-primary/40 group-hover:scale-105 transition-all">
                         {getInitials(user.name)}
                       </div>
                     </div>
