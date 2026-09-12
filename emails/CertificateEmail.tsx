@@ -17,7 +17,7 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
-import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "../src/lib/emailConfig";
+import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "@/lib/emailConfig";
 
 interface CertificateEmailProps {
   recipientName?: string;

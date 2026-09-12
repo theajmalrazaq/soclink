@@ -3,11 +3,11 @@
 Socflow is an open-source, database-driven society management and email operations platform designed for student chapters, clubs, and community organizations.
 
 ## ✨ Key Features
-- **BYO SMTP Engine**: Send emails directly using your own Gmail App Passwords or custom SMTP configurations.
-- **Dynamic Email Suite**: 8 fully customizable email templates (Announcements, Inductions, Interviews, Certificates, Selections, Rejections, Events, and Contact Responses) synchronized with Supabase DB.
-- **Member & Induction Management**: Organize leads, applicants, recruitment stages, and event attendees.
+- **BYO SMTP Engine**: Send transactional and bulk emails directly using your Gmail App Passwords or custom SMTP configurations.
+- **Dynamic Email Suite**: 8 fully customizable email templates (Announcements, Inductions, Interviews, Certificates, Selections, Rejections, Events, and Contact Responses) synchronized with Postgres DB.
+- **Member & Induction Management**: Organize leads, applicants, recruitment stages, interviews, and event attendees.
 - **Role-Based Access Control**: Secure permission levels for admins, leads, and event managers.
-- **Modern Tech Stack**: React, Vite, Tailwind CSS, Framer Motion, Radix UI, and React Email.
+- **Modern Tech Stack**: Next.js (App Router), React 18, Drizzle ORM, PostgreSQL, Tailwind CSS, Framer Motion, Radix UI, Zustand, and React Email.
 
 ## 🚀 Getting Started
 
@@ -19,24 +19,48 @@ npm install
 ```
 
 ### 2. Environment Variables
-Configure `.env` with your Supabase credentials:
+Configure `.env` with your database and Supabase credentials:
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# PostgreSQL database connection (Drizzle ORM)
+DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:6543/postgres"
+
+# Supabase Auth configuration
+NEXT_PUBLIC_SUPABASE_URL="https://[YOUR-PROJECT].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
 ```
 
-### 3. Start Development Server
+### 3. Database Management (Drizzle ORM)
+```bash
+# Push schema changes to database
+bun run db:push
+
+# Generate migrations
+bun run db:generate
+
+# Open Drizzle Studio database UI
+bun run db:studio
+```
+
+### 4. Start Development Server
 ```bash
 bun run dev
-# or
-npm run dev
 ```
 
-### 4. Build for Production
+### 5. Build for Production
 ```bash
 bun run build
-# or
-npm run build
+```
+
+### 6. Code Quality & Type Checking
+```bash
+# Type check TypeScript
+bun run typecheck
+
+# Lint source files
+bun run lint
+
+# Clean build artifacts
+bun run clean
 ```
 
 ## 📄 License

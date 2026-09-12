@@ -1,0 +1,817 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useOutletContext } from "@/lib/context";
+import {
+  Mail,
+  File,
+  MessageCircle,
+  Trash2,
+  FileDown,
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  PlusCircle,
+  Search,
+  Check,
+  X,
+  Edit,
+  Users,
+  Phone,
+  Linkedin,
+  User,
+  ChevronDown,
+  Loader,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { motion } from "framer-motion";
+import Loading from "@/components/layout/Loading";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { canManageLeads, hasPermission } from "@/lib/permissions";
+import {
+  useLeadMembersQuery,
+  useCreateLeadMemberMutation,
+  useUpdateLeadMemberMutation,
+  useDeleteLeadMemberMutation,
+} from "@/hooks/queries/useLeads";
+import { toast } from "sonner";
+import { useLeadStore } from "@/stores/useLeadStore";
+
+function LeadDetails() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const outlet = useOutletContext();
+  const permissions = outlet?.permissions;
+  const lead_id = searchParams?.get("id") || searchParams?.get("lead_id") || "";
+  const lead_title = searchParams?.get("title") || searchParams?.get("lead_title") || "Lead Members";
+
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    if (permissions && !canManageLeads(permissions)) {
+      router.push("/no-permission");
+    }
+  }, [permissions, router]);
+
+  const {
+    searchTerm,
+    setSearchTerm,
+    page,
+    setPage,
+    exportFilter,
+    setExportFilter,
+    leadToDelete,
+    setLeadToDelete,
+    isCreatingNewMember,
+    setIsCreatingNewMember,
+    isUpdating,
+    setIsUpdating,
+    idToUpdate,
+    setIdToUpdate,
+    memberForm,
+    setMemberFormField,
+    resetMemberForm,
+  } = useLeadStore();
+
+  const leadsPerPage = 10;
+
+  const { data: members = [], isLoading: loading } = useLeadMembersQuery(lead_id);
+
+  const createMemberMutation = useCreateLeadMemberMutation(lead_id);
+  const updateMemberMutation = useUpdateLeadMemberMutation(lead_id);
+  const deleteMemberMutation = useDeleteLeadMemberMutation(lead_id);
+
+  const filteredLeads = members.filter((lead: any) => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      (lead.name || "").toLowerCase().includes(q) ||
+      (lead.roll_no || "").toLowerCase().includes(q) ||
+      (lead.designation || "").toLowerCase().includes(q)
+    );
+  });
+  const totalLeads = filteredLeads.length;
+
+  // Granular loading states
+  const updatingStatusId = updateMemberMutation.isPending
+    ? (updateMemberMutation.variables as any)?.id
+    : null;
+  const updatingStatusValue = (updateMemberMutation.variables as any)?.status;
+  const deletingId = deleteMemberMutation.isPending ? leadToDelete?.id : null;
+  const creatingMember = createMemberMutation.isPending;
+  const updatingMember = updateMemberMutation.isPending;
+
+  const handleStatusUpdate = async (id: any, status: boolean) => {
+    try {
+      await updateMemberMutation.mutateAsync({ id: String(id), status });
+    } catch {}
+  };
+
+  const deleteLead = async () => {
+    if (!leadToDelete) return;
+    try {
+      await deleteMemberMutation.mutateAsync(String(leadToDelete.id));
+      setLeadToDelete(null);
+    } catch {}
+  };
+
+  const handleCreateNewLead = async () => {
+    if (!memberForm.name) {
+      toast.error("Name cannot be empty.");
+      return;
+    }
+
+    try {
+      await createMemberMutation.mutateAsync(memberForm);
+      resetMemberForm();
+      setIsCreatingNewMember(false);
+    } catch {}
+  };
+
+  const handleUpdateLead = async () => {
+    if (!idToUpdate) return;
+    try {
+      await updateMemberMutation.mutateAsync({
+        id: String(idToUpdate.id),
+        ...memberForm,
+      });
+      resetMemberForm();
+      setIsUpdating(false);
+    } catch {}
+  };
+
+  const handleExportCSV = async (statusFilter?: string) => {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/leads/${lead_id}/members`);
+      const json = await res.json();
+      const dataToExport = json.members || [];
+
+      let filtered = dataToExport;
+
+      if (statusFilter) {
+        filtered = dataToExport.filter(
+          (lead: any) =>
+            (statusFilter === "active" && lead.status === true) ||
+            (statusFilter === "inactive" && lead.status !== true),
+        );
+      }
+
+      const csvContent = [
+        ["Name", "Roll No", "Email", "Whatsapp", "Designation", "LinkedIn", "Avatar", "Status"],
+        ...filtered.map((lead: any) => [
+          lead.name,
+          lead.roll_no,
+          lead.nu_email,
+          lead.whatsapp_no,
+          lead.designation,
+          lead.linkedin,
+          lead.avatar,
+          lead.status === true ? "Active" : "Inactive",
+        ]),
+      ]
+        .map((e) => e.join(","))
+        .join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${lead_title}_${statusFilter || "all"}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      toast.error("Failed to export CSV.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportVCF = async (statusFilter?: string) => {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/leads/${lead_id}/members`);
+      const json = await res.json();
+      const dataToExport = json.members || [];
+
+      let filtered = dataToExport;
+
+      if (statusFilter) {
+        filtered = dataToExport.filter(
+          (lead: any) =>
+            (statusFilter === "active" && lead.status === true) ||
+            (statusFilter === "inactive" && lead.status !== true),
+        );
+      }
+
+      const vcfContent = filtered
+        .map(
+          (lead: any) =>
+            `BEGIN:VCARD\nVERSION:3.0\nFN:${lead.name}\nTEL:${lead.whatsapp_no}\nEMAIL:${lead.nu_email}\nEND:VCARD`,
+        )
+        .join("\n");
+
+      const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${lead_title}_${statusFilter || "all"}.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      toast.error("Failed to export VCF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 0) setPage(page - 1);
+  };
+
+  const handleNextPage = () => {
+    if (filteredLeads.length === leadsPerPage) setPage(page + 1);
+  };
+
+  return (
+    <>
+      {loading ? (
+        <Loading />
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full flex flex-col items-start px-2 py-4"
+        >
+          {/* Search & Filters */}
+          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="relative w-full sm:w-80 md:w-96 max-w-md">
+              <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 bg-background/60 backdrop-blur-xl border-border/50"
+              />
+            </div>
+
+            <div className="flex gap-2 w-full md:w-auto">
+              {hasPermission(permissions, "leads", "exportData") && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="lg" variant="outline" className="h-11 gap-2 flex-1 md:flex-none">
+                      {exporting ? <Loader className="h-4 w-4 animate-spin" /> : <File className="h-4 w-4" />}
+                      Export
+                      {exportFilter && exportFilter !== "all" && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({exportFilter[0].toUpperCase() + exportFilter.slice(1)})
+                        </span>
+                      )}
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Export As</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportCSV();
+                        setExportFilter("all");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      CSV (All)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportCSV("active");
+                        setExportFilter("active");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      CSV (Active)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportCSV("inactive");
+                        setExportFilter("inactive");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      CSV (Inactive)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportVCF();
+                        setExportFilter("all");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      VCF (All)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportVCF("active");
+                        setExportFilter("active");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      VCF (Active)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleExportVCF("inactive");
+                        setExportFilter("inactive");
+                      }}
+                    >
+                      <FileDown className="w-4 mr-2" />
+                      VCF (Inactive)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {hasPermission(permissions, "leads", "addMember") && (
+                <Button
+                  size="lg"
+                  className="h-11 gap-2 flex-1 md:flex-none"
+                  onClick={() => setIsCreatingNewMember(true)}
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  New Member
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full">
+            {filteredLeads.length === 0 ? (
+              <Card className="rounded-2xl bg-background/60 border border-border/50 backdrop-blur-xl w-full">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-xl font-semibold text-muted-foreground mb-2">
+                      No members found
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {searchTerm
+                        ? "Try adjusting your search"
+                        : "Get started by adding your first member"}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="rounded-2xl bg-background/60 border border-border/50 backdrop-blur-xl w-full">
+                <ul className="divide-y divide-border/50">
+                  {filteredLeads.map((lead: any) => (
+                    <li
+                      key={lead.id}
+                      className="p-6 flex items-start gap-6 md:gap-8 group hover:bg-background/40 transition-colors"
+                    >
+                      <div className="shrink-0">
+                        <Avatar className="size-14 rounded-full border border-border/60 shadow-xs">
+                          {lead.avatar && lead.avatar.startsWith("http") && (
+                            <AvatarImage
+                              src={lead.avatar}
+                              alt={lead.name}
+                              className="object-cover"
+                            />
+                          )}
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                            {lead.name
+                              ? lead.name
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)
+                              : "ML"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="font-semibold text-lg md:text-xl line-clamp-1 text-foreground">
+                            {lead.name}
+                          </h3>
+                          <Badge
+                            className={
+                              lead.status === true
+                                ? "bg-green-700 text-white border-none"
+                                : "bg-red-600 text-white border-none"
+                            }
+                          >
+                            {lead.status === true ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+
+                        <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-4">
+                          {lead.designation && (
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5 text-primary" />
+                              <span className="truncate">{lead.designation}</span>
+                            </div>
+                          )}
+                          {lead.roll_no && (
+                            <div className="flex items-center gap-2">
+                              <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                              <span>{lead.roll_no}</span>
+                            </div>
+                          )}
+                          {lead.nu_email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-3.5 h-3.5 text-primary" />
+                              <span className="truncate">{lead.nu_email}</span>
+                            </div>
+                          )}
+                          {lead.whatsapp_no && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5 text-primary" />
+                              <span>{lead.whatsapp_no}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          {hasPermission(permissions, "leads", "changeStatus") && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  {lead.status === true
+                                    ? "Active"
+                                    : lead.status === false
+                                      ? "Inactive"
+                                      : "Status"}
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleStatusUpdate(lead.id, true);
+                                  }}
+                                >
+                                  {updatingStatusId === lead.id && updatingStatusValue === true ? (
+                                    <span className="flex items-center">
+                                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                      Updating...
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <Check className="mr-2 w-4" />
+                                      Set Active
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleStatusUpdate(lead.id, false);
+                                  }}
+                                >
+                                  {updatingStatusId === lead.id && updatingStatusValue === false ? (
+                                    <span className="flex items-center">
+                                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                      Updating...
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <X className="mr-2 w-4" />
+                                      Set Inactive
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+
+                          {lead.whatsapp_no && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`https://wa.me/${lead.whatsapp_no}`)}
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                              Message
+                            </Button>
+                          )}
+
+                          {lead.linkedin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(lead.linkedin)}
+                            >
+                              <Linkedin className="w-3.5 h-3.5 mr-1" />
+                              LinkedIn
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIdToUpdate(lead);
+                              setMemberFormField("name", lead.name || "");
+                              setMemberFormField("roll_no", lead.roll_no || "");
+                              setMemberFormField("nu_email", lead.nu_email || "");
+                              setMemberFormField("whatsapp_no", lead.whatsapp_no || "");
+                              setMemberFormField("designation", lead.designation || "");
+                              setMemberFormField("linkedin", lead.linkedin || "");
+                              setMemberFormField("avatar", lead.avatar || "");
+                              setIsUpdating(true);
+                            }}
+                          >
+                            <Edit className="w-3.5 h-3.5 mr-1" />
+                            Edit
+                          </Button>
+
+                          {hasPermission(permissions, "leads", "deleteLead") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => setLeadToDelete(lead)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {filteredLeads.length > 0 && (
+              <div className="fixed bottom-6 right-8 z-30 pointer-events-auto">
+                <div className="inline-flex items-center gap-3 rounded-full bg-background/85 backdrop-blur-2xl border border-border/80 px-4 py-2.5 shadow-xl text-xs text-muted-foreground transition-all duration-200 hover:shadow-2xl">
+                  <span>
+                    Showing{" "}
+                    <strong className="text-foreground font-semibold">
+                      {page * leadsPerPage + 1} - {Math.min((page + 1) * leadsPerPage, totalLeads)}
+                    </strong>{" "}
+                    of <strong className="text-foreground font-semibold">{totalLeads}</strong>{" "}
+                    members
+                  </span>
+                  <div className="flex items-center gap-1 border-l border-border/60 pl-3">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-7 rounded-full hover:bg-accent"
+                      onClick={handlePreviousPage}
+                      disabled={page === 0}
+                    >
+                      <ChevronLeft className="size-3.5" />
+                      <span className="sr-only">Previous</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-7 rounded-full hover:bg-accent"
+                      onClick={handleNextPage}
+                      disabled={filteredLeads.length < leadsPerPage}
+                    >
+                      <ChevronRight className="size-3.5" />
+                      <span className="sr-only">Next</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Create Member Dialog */}
+          <Dialog
+            open={isCreatingNewMember}
+            onOpenChange={(open) => !open && setIsCreatingNewMember(false)}
+          >
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Member</DialogTitle>
+                <DialogDescription>Enter the details for the new team member.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 mt-2">
+                <Input
+                  placeholder="Full Name *"
+                  value={memberForm.name}
+                  onChange={(e) => setMemberFormField("name", e.target.value)}
+                />
+                <Input
+                  placeholder="Roll Number"
+                  value={memberForm.roll_no}
+                  onChange={(e) => setMemberFormField("roll_no", e.target.value)}
+                />
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={memberForm.nu_email}
+                  onChange={(e) => setMemberFormField("nu_email", e.target.value)}
+                />
+                <Input
+                  placeholder="WhatsApp Number"
+                  value={memberForm.whatsapp_no}
+                  onChange={(e) => setMemberFormField("whatsapp_no", e.target.value)}
+                />
+                <Input
+                  placeholder="Designation"
+                  value={memberForm.designation}
+                  onChange={(e) => setMemberFormField("designation", e.target.value)}
+                />
+                <Input
+                  placeholder="LinkedIn Profile URL"
+                  value={memberForm.linkedin}
+                  onChange={(e) => setMemberFormField("linkedin", e.target.value)}
+                />
+                <Input
+                  placeholder="Avatar URL"
+                  value={memberForm.avatar}
+                  onChange={(e) => setMemberFormField("avatar", e.target.value)}
+                />
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleCreateNewLead}
+                  disabled={creatingMember}
+                  className="bg-green-700 text-white hover:bg-green-800"
+                >
+                  {creatingMember ? (
+                    <span className="flex items-center">
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </span>
+                  ) : (
+                    "Create Member"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Update Member Dialog */}
+          <Dialog open={isUpdating} onOpenChange={(open) => !open && setIsUpdating(false)}>
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Update Member</DialogTitle>
+                <DialogDescription>Update the details for this team member.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 mt-2">
+                <Input
+                  placeholder="Full Name *"
+                  value={memberForm.name}
+                  onChange={(e) => setMemberFormField("name", e.target.value)}
+                />
+                <Input
+                  placeholder="Roll Number"
+                  value={memberForm.roll_no}
+                  onChange={(e) => setMemberFormField("roll_no", e.target.value)}
+                />
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={memberForm.nu_email}
+                  onChange={(e) => setMemberFormField("nu_email", e.target.value)}
+                />
+                <Input
+                  placeholder="WhatsApp Number"
+                  value={memberForm.whatsapp_no}
+                  onChange={(e) => setMemberFormField("whatsapp_no", e.target.value)}
+                />
+                <Input
+                  placeholder="Designation"
+                  value={memberForm.designation}
+                  onChange={(e) => setMemberFormField("designation", e.target.value)}
+                />
+                <Input
+                  placeholder="LinkedIn Profile URL"
+                  value={memberForm.linkedin}
+                  onChange={(e) => setMemberFormField("linkedin", e.target.value)}
+                />
+                <Input
+                  placeholder="Avatar URL"
+                  value={memberForm.avatar}
+                  onChange={(e) => setMemberFormField("avatar", e.target.value)}
+                />
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleUpdateLead}
+                  disabled={updatingMember}
+                  className="bg-green-700 text-white hover:bg-green-800"
+                >
+                  {updatingMember ? (
+                    <span className="flex items-center">
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </span>
+                  ) : (
+                    "Update Member"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <AlertDialog
+            open={Boolean(leadToDelete)}
+            onOpenChange={(open) => !open && setLeadToDelete(null)}
+          >
+            {leadToDelete && (
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will permanently delete <strong>{leadToDelete.name}</strong> from
+                    this lead team. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={deleteLead}
+                    disabled={deletingId === leadToDelete?.id}
+                    className="bg-red-600 text-white hover:bg-red-700"
+                  >
+                    {deletingId === leadToDelete?.id ? (
+                      <span className="flex items-center">
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </span>
+                    ) : (
+                      "Delete"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            )}
+          </AlertDialog>
+
+          <div className="w-full mt-12 text-center">
+            <div className="flex items-center justify-center text-xs text-muted-foreground">
+              Powered by{" "}
+              <a
+                href="https://socflow.app"
+                target="_blank"
+                className="text-foreground font-medium hover:underline ml-1"
+                rel="noreferrer"
+              >
+                Socflow
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </>
+  );
+}
+
+export default LeadDetails;

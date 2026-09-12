@@ -16,7 +16,7 @@ import {
   Link,
   Hr,
 } from "@react-email/components";
-import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "../src/lib/emailConfig";
+import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "@/lib/emailConfig";
 
 interface RejectionEmailProps {
   recipientName?: string;

@@ -1,0 +1,717 @@
+"use client";
+import { useRouter } from "next/navigation";
+import { useOutletContext } from "@/lib/context";
+import { useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Link,
+  Image,
+  Trophy,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Mail,
+  Loader,
+} from "lucide-react";
+import { sendBulkEmails } from "@/lib/emailService";
+import { useCreateEventMutation } from "@/hooks/queries/useEvents";
+import { canManageEvents, hasPermission } from "@/lib/permissions";
+import { Calendar as DateCalendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useEventStore } from "@/stores/useEventStore";
+
+function NewEvent() {
+  const router = useRouter();
+  const navigateto = (path: string) => router.push(path);
+  const outlet = useOutletContext();
+  const access = outlet?.permissions;
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const createEventMutation = useCreateEventMutation();
+
+  useEffect(() => {
+    if (access && !canManageEvents(access) && !hasPermission(access, "events", "createEvent")) {
+      navigateto("/no-permission");
+    }
+  }, [access, navigateto]);
+
+  const {
+    eventForm,
+    setEventFormField,
+    resetEventForm,
+    isDialogOpen,
+    setIsDialogOpen,
+    isSubmitting,
+    setIsSubmitting,
+  } = useEventStore();
+
+  const {
+    title,
+    date,
+    hour,
+    minute,
+    period,
+    speaker,
+    linkPrimary,
+    linkSecondary,
+    linkOneText,
+    linkTwoText,
+    location,
+    imgUrl,
+    description,
+    iscompetition,
+    sendEmail,
+    customRecipients,
+    sendingProgress,
+  } = eventForm;
+
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+
+  const applyFormat = (command) => {
+    const el = descriptionRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const before = description.slice(0, start);
+    const selected = description.slice(start, end);
+    const after = description.slice(end);
+
+    let newVal = description;
+    let cursor = end;
+
+    switch (command) {
+      case "bold":
+        newVal = `${before}**${selected || "bold text"}**${after}`;
+        cursor = start + 2 + (selected ? selected.length : 9);
+        break;
+      case "italic":
+        newVal = `${before}_${selected || "italic text"}_${after}`;
+        cursor = start + 1 + (selected ? selected.length : 11);
+        break;
+      case "underline":
+        newVal = `${before}<u>${selected || "underlined text"}</u>${after}`;
+        cursor = start + 3 + (selected ? selected.length : 15);
+        break;
+      case "insertUnorderedList": {
+        const lines = (selected || "List item").split("\n");
+        const items = lines.map((l) => `- ${l}`).join("\n");
+        newVal = `${before}${items}${after}`;
+        cursor = before.length + items.length;
+        break;
+      }
+      case "insertOrderedList": {
+        const lines = (selected || "List item").split("\n");
+        const items = lines.map((l, i) => `${i + 1}. ${l}`).join("\n");
+        newVal = `${before}${items}${after}`;
+        cursor = before.length + items.length;
+        break;
+      }
+      default:
+        return;
+    }
+
+    setEventFormField("description", newVal);
+    setTimeout(() => {
+      try {
+        el.focus();
+        el.setSelectionRange(cursor, cursor);
+      } catch {}
+    }, 0);
+  };
+
+  const formatTime = () => {
+    if (!hour || !minute) return "";
+    const h24 =
+      period === "PM" && hour !== "12"
+        ? String(parseInt(hour) + 12).padStart(2, "0")
+        : period === "AM" && hour === "12"
+          ? "00"
+          : hour.padStart(2, "0");
+    return `${h24}:${minute}`;
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const formattedTime = formatTime();
+      const formattedDate = date ? format(date, "yyyy-MM-dd") : null;
+
+      await createEventMutation.mutateAsync({
+        title: title || null,
+        date: formattedDate,
+        time: formattedTime || null,
+        link_primary: linkPrimary || null,
+        linkone_text: linkOneText || null,
+        link_secondary: linkSecondary || null,
+        linktwo_text: linkTwoText || null,
+        location: location || null,
+        img_url: imgUrl || null,
+        description: description || null,
+        speaker: speaker || null,
+        is_competition: iscompetition || false,
+      });
+
+      if (sendEmail) {
+        try {
+          const mRes = await fetch("/api/members?status=active&limit=1000");
+          const mJson = await mRes.json();
+          const membersList = mJson.data || [];
+
+          const recipients = membersList.map((m: any) => ({
+            email: m.nu_email || m.email,
+            name: m.name,
+          }));
+
+          if (customRecipients) {
+            const customs = customRecipients.split(",").flatMap((e) => {
+              const trimmed = e.trim();
+              return trimmed ? [trimmed] : [];
+            });
+            customs.forEach((email) => {
+              recipients.push({ email, name: "Guest" });
+            });
+          }
+
+          if (recipients.length > 0) {
+            toast.info("Sending announcement emails...");
+            await sendBulkEmails({
+              recipients,
+              subject: `${iscompetition ? "New Competition" : "New Event"} - ${title}`,
+              templateName: "event",
+              templateProps: (recipient) => ({
+                recipientName: recipient.name,
+                eventTitle: title,
+                eventDescription: description,
+                eventDate: formattedDate,
+                eventTime: formattedTime,
+                eventLocation: location,
+                eventImage: imgUrl,
+                registrationLink: linkPrimary,
+                isCompetition: iscompetition,
+              }),
+              onProgress: (current, total) => {
+                setEventFormField("sendingProgress", { current, total });
+              },
+            });
+            toast.success("Announcement emails sent!");
+          }
+        } catch (emailErr) {
+          console.error("Failed to send emails:", emailErr);
+          toast.error("Event created but failed to send emails.");
+        }
+      }
+
+      resetEventForm();
+
+      toast(
+        <div>
+          <strong>Event Posted Successfully!</strong>
+          <div>
+            Your event has been scheduled and published
+            <button
+              onClick={() => navigateto("/events")}
+              className="underline text-sm ml-2 leading-none hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              View
+            </button>
+          </div>
+        </div>,
+      );
+    } catch {
+      toast(
+        <div>
+          <strong>Failed!!</strong>
+          <div>Event failed to post. Please try again.</div>
+        </div>,
+      );
+    }
+
+    setIsSubmitting(false);
+  };
+
+  const handleConfirmSubmit = () => {
+    handleSubmit();
+    setIsDialogOpen(false);
+  };
+
+  return (
+    <div className="w-full flex flex-col items-start px-2 py-4">
+      {/* Header Section */}
+      <div className="relative w-full flex flex-col mb-8">
+        <div
+          className="absolute top-0 left-0 w-96 h-96 rounded-full filter blur-3xl opacity-20 pointer-events-none"
+          style={{
+            backgroundImage: "linear-gradient(45deg, #2A43F8 24%, #2A43F8 50%, #4482ff 91%)",
+          }}
+        />
+
+        <div className="w-full relative flex items-start flex-col justify-start z-10 py-4">
+          <div className="flex items-center gap-3 mb-4">
+            <h2
+              className="text-4xl sm:text-5xl font-extrabold text-left font-recoleta"
+              style={{
+                backgroundImage: "linear-gradient(45deg,#2A43F8 24%, #2A43F8 50%, #4482ff 91%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Create New Event
+            </h2>
+          </div>
+          <p className="text-lg text-muted-foreground mb-6 text-left">
+            Create and publish events that inspire your community
+          </p>
+        </div>
+      </div>
+
+      {/* Main Form Card */}
+      <Card className="rounded-2xl bg-background/60 border border-border/50 backdrop-blur-xl w-full max-w-4xl">
+        <CardContent className="p-6 md:p-8">
+          <div className="space-y-6">
+            {/* Competition Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-purple-600/5 border border-purple-600/20">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-purple-400" />
+                <div>
+                  <label htmlFor="competition" className="font-semibold text-sm">
+                    Competition Event
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable if this is a competitive event
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="competition"
+                checked={iscompetition}
+                onCheckedChange={(checked) => setEventFormField("iscompetition", checked)}
+              />
+            </div>
+
+            {/* Event Title */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                Event Title *
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setEventFormField("title", e.target.value)}
+                placeholder="Enter event title"
+                className="h-11 bg-background/60"
+                required
+              />
+            </div>
+
+            {/* Date and Time Pickers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  Event Date *
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      data-empty={!date}
+                      className={cn(
+                        "h-11 w-full justify-start bg-background/60 text-left font-normal",
+                        "data-[empty=true]:text-muted-foreground",
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <DateCalendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate) => setEventFormField("date", newDate)}
+                      captionLayout="dropdown"
+                      startMonth={new Date(2020, 0)}
+                      endMonth={new Date(2030, 11)}
+                      defaultMonth={date || new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Event Time *
+                </label>
+                <div className="flex gap-2">
+                  <Select value={hour} onValueChange={(val) => setEventFormField("hour", val)}>
+                    <SelectTrigger className="h-11 bg-background/60">
+                      <SelectValue placeholder="Hour" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hours.map((h) => (
+                        <SelectItem key={h} value={h}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={minute} onValueChange={(val) => setEventFormField("minute", val)}>
+                    <SelectTrigger className="h-11 bg-background/60">
+                      <SelectValue placeholder="Min" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {minutes.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={period} onValueChange={(val) => setEventFormField("period", val)}>
+                    <SelectTrigger className="h-11 w-24 bg-background/60">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Speaker & Location */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <User className="w-4 h-4 text-primary" />
+                  Speaker
+                </label>
+                <Input
+                  value={speaker}
+                  onChange={(e) => setEventFormField("speaker", e.target.value)}
+                  placeholder="Speaker name"
+                  className="h-11 bg-background/60"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Location
+                </label>
+                <Input
+                  value={location}
+                  onChange={(e) => setEventFormField("location", e.target.value)}
+                  placeholder="Event location"
+                  className="h-11 bg-background/60"
+                />
+              </div>
+            </div>
+
+            {/* Registration & Additional Links */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Link className="w-4 h-4 text-primary" />
+                  Registration Link
+                </label>
+                <Input
+                  value={linkPrimary}
+                  onChange={(e) => setEventFormField("linkPrimary", e.target.value)}
+                  placeholder="https://forms.google.com/..."
+                  className="h-11 bg-background/60"
+                  type="url"
+                />
+                <div className="mt-1">
+                  <Input
+                    value={linkOneText}
+                    onChange={(e) => setEventFormField("linkOneText", e.target.value)}
+                    placeholder="Button Text (e.g. Register Now)"
+                    className="h-9 bg-background/50"
+                    type="text"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Link className="w-4 h-4 text-primary" />
+                  Secondary Link (Optional)
+                </label>
+                <Input
+                  value={linkSecondary}
+                  onChange={(e) => setEventFormField("linkSecondary", e.target.value)}
+                  placeholder="https://chat.whatsapp.com/..."
+                  className="h-11 bg-background/60"
+                  type="url"
+                />
+                <div className="mt-1">
+                  <Input
+                    value={linkTwoText}
+                    onChange={(e) => setEventFormField("linkTwoText", e.target.value)}
+                    placeholder="Button Text (e.g. Join WhatsApp Group)"
+                    className="h-9 bg-background/50"
+                    type="text"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Event Image URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Image className="w-4 h-4 text-primary" />
+                Event Image URL
+              </label>
+              <Input
+                value={imgUrl}
+                onChange={(e) => setEventFormField("imgUrl", e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="h-11 bg-background/60"
+                type="url"
+              />
+              {imgUrl && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-border/50">
+                  <img
+                    src={imgUrl}
+                    alt="Preview"
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Event Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event Description</label>
+
+              {/* Formatting Toolbar */}
+              <div className="flex flex-wrap gap-1 p-2 rounded-lg bg-background/80 border border-border/50">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => applyFormat("bold")}
+                  title="Bold"
+                >
+                  <Bold className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => applyFormat("italic")}
+                  title="Italic"
+                >
+                  <Italic className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => applyFormat("underline")}
+                  title="Underline"
+                >
+                  <Underline className="w-4 h-4" />
+                </Button>
+                <div className="w-px h-8 bg-border/50 mx-1" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => applyFormat("insertUnorderedList")}
+                  title="Bullet List"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => applyFormat("insertOrderedList")}
+                  title="Numbered List"
+                >
+                  <ListOrdered className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <Textarea
+                ref={descriptionRef}
+                value={description}
+                onChange={(e) => setEventFormField("description", e.target.value)}
+                placeholder="Describe your event..."
+                className="min-h-[200px] p-4 rounded-lg bg-background/60 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use the toolbar above to format your description
+              </p>
+            </div>
+
+            {/* Email Announcement Section */}
+            <div className="p-4 rounded-lg bg-blue-600/5 border border-blue-600/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-blue-400" />
+                  <div>
+                    <label htmlFor="sendEmail" className="font-semibold text-sm">
+                      Send Announcement Email
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Notify members about this event via email
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="sendEmail"
+                  checked={sendEmail}
+                  onCheckedChange={(checked) => setEventFormField("sendEmail", checked)}
+                />
+              </div>
+
+              {sendEmail && (
+                <div className="space-y-4 pt-2 border-t border-blue-600/10">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Recipients</label>
+                    <p className="text-xs text-muted-foreground">
+                      Email will be sent to all active members
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Additional Recipients (Optional)</label>
+                    <Input
+                      value={customRecipients}
+                      onChange={(e) => setEventFormField("customRecipients", e.target.value)}
+                      placeholder="email1@example.com, email2@example.com"
+                      className="h-11 bg-background/60"
+                    />
+                    <p className="text-xs text-muted-foreground">Comma separated email addresses</p>
+                  </div>
+
+                  {sendingProgress.total > 0 && (
+                    <div className="text-sm text-blue-500 font-medium">
+                      Sending emails: {sendingProgress.current} / {sendingProgress.total}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigateto("/events")}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setIsDialogOpen(true)}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
+                  </span>
+                ) : (
+                  "Schedule Event"
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="px-6 md:px-8 py-4 border-t border-border/50">
+          <div className="text-xs text-muted-foreground">
+            * Required fields. Fill in the details and click Schedule Event to publish.
+          </div>
+        </CardFooter>
+      </Card>
+
+      {/* Footer */}
+      <div className="w-full mt-12 text-center">
+        <div className="flex items-center justify-center text-xs text-muted-foreground">
+          Powered by{" "}
+          <a
+            href="https://socflow.app"
+            target="_blank"
+            className="text-foreground font-medium hover:underline ml-1"
+            rel="noreferrer"
+          >
+            Socflow
+          </a>
+        </div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <AlertDialogContent className="overflow-hidden">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to schedule this event? It will be published immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSubmit}
+              className="bg-linear-to-r from-[#2A43F8] to-[#4482ff]"
+            >
+              Confirm & Schedule
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+export default NewEvent;

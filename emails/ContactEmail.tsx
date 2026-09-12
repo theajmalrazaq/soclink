@@ -15,7 +15,7 @@ import {
   Column,
   Font,
 } from "@react-email/components";
-import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "../src/lib/emailConfig";
+import { DEFAULT_EMAIL_CONFIG, getEmailFontSizes } from "@/lib/emailConfig";
 
 interface ContactEmailProps {
   recipientName?: string;
