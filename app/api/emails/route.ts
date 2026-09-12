@@ -33,9 +33,18 @@ export async function GET(req: NextRequest) {
     const total = list.length;
     const paged = list.slice(page * limit, (page + 1) * limit);
 
+    const formatted = paged.map((e) => ({
+      ...e,
+      Name: e.name || "",
+      Email: e.email || "",
+      Subject: e.subject || "",
+      Message: e.message || "",
+      created_at: e.createdAt || null,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: paged,
+      data: formatted,
       total,
     });
   } catch (err: any) {

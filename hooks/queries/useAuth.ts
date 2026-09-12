@@ -36,7 +36,6 @@ function setCachedSession(data: any) {
 export function useUserSession() {
   return useQuery({
     queryKey: USER_SESSION_QUERY_KEY,
-    initialData: getCachedSession,
     queryFn: async () => {
       const {
         data: { user },

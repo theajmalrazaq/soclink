@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, useEffect, memo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,7 @@ import {
 import { useTheme } from "@/lib/theme-provider";
 import { useUserSession, useLogoutMutation } from "@/hooks/queries/useAuth";
 import {
+  DEFAULT_PERMISSIONS,
   canManageLeads,
   canManageEvents,
   canManageInductions,
@@ -48,7 +49,7 @@ export function Navbar({ access, user, children }: NavbarProps) {
   const logoutMutation = useLogoutMutation();
 
   const userInfo = user || session?.user || null;
-  const effectiveAccess = access || session?.permissions || session?.role || null;
+  const effectiveAccess = access || session?.permissions || session?.role || DEFAULT_PERMISSIONS;
 
   const userInitials = useMemo(() => {
     if (userInfo?.name && userInfo.name.trim()) {
@@ -64,14 +65,22 @@ export function Navbar({ access, user, children }: NavbarProps) {
     return "SF";
   }, [userInfo]);
 
-  const [isCollapsed, setIsCollapsed] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
-  );
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true") {
+        setIsCollapsed(true);
+      }
+    } catch {}
+  }, []);
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed((prev) => {
       const newVal = !prev;
-      localStorage.setItem("sidebar-collapsed", String(newVal));
+      try {
+        localStorage.setItem("sidebar-collapsed", String(newVal));
+      } catch {}
       return newVal;
     });
   }, []);
@@ -340,33 +349,32 @@ export function Navbar({ access, user, children }: NavbarProps) {
                     : currentPath.startsWith(item.path);
 
             return (
-              <Link key={item.id} href={item.path} className="w-full cursor-pointer">
-                <button
-                  type="button"
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
-                    isCollapsed ? "justify-center px-0 size-10 mx-auto" : "justify-start"
-                  } ${
-                    isActive
-                      ? "bg-accent text-accent-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  }`}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <AnimatePresence mode="wait">
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.12 }}
-                        className="truncate"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
+              <Link
+                key={item.id}
+                href={item.path}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                  isCollapsed ? "justify-center px-0 size-10 mx-auto" : "justify-start"
+                } ${
+                  isActive
+                    ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                }`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Icon className="size-4 shrink-0" />
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.12 }}
+                      className="truncate"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
             );
           })}
@@ -422,7 +430,10 @@ export function Navbar({ access, user, children }: NavbarProps) {
               isCollapsed ? "justify-center" : "px-1"
             }`}
           >
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-xs font-semibold text-foreground uppercase">
+            <div
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-xs font-semibold text-foreground uppercase"
+              suppressHydrationWarning
+            >
               {userInitials}
             </div>
             <AnimatePresence mode="wait">
@@ -437,12 +448,14 @@ export function Navbar({ access, user, children }: NavbarProps) {
                   <span
                     className="truncate text-xs font-semibold leading-tight text-foreground"
                     title={userInfo?.name}
+                    suppressHydrationWarning
                   >
                     {userInfo?.name || "User"}
                   </span>
                   <span
                     className="truncate text-[11px] text-muted-foreground leading-tight"
                     title={userInfo?.email}
+                    suppressHydrationWarning
                   >
                     {userInfo?.email || ""}
                   </span>

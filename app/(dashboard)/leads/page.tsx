@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
 import {
@@ -14,6 +14,7 @@ import {
   FolderOpen,
   Loader,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loading from "@/components/layout/Loading";
@@ -38,7 +39,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { hasPermission } from "@/lib/permissions";
+import { canManageLeads, hasPermission } from "@/lib/permissions";
 
 import {
   useLeadsQuery,
@@ -52,6 +53,12 @@ function Leads() {
   const router = useRouter();
   const outlet = useOutletContext();
   const access = outlet?.permissions;
+
+  useEffect(() => {
+    if (access && !canManageLeads(access)) {
+      router.push("/no-permission");
+    }
+  }, [access, router]);
 
   const {
     listPage: page,
@@ -109,7 +116,7 @@ function Leads() {
 
   const handleCreateNewLead = async () => {
     if (!newLeadTitle.trim()) {
-      toast.error("Lead title cannot be empty.");
+      toast.error("Lead category title cannot be empty.");
       return;
     }
 
@@ -139,57 +146,34 @@ function Leads() {
       {loading ? (
         <Loading />
       ) : (
-        <div className="w-full flex flex-col items-start px-2 py-4">
-          {/* Header Section */}
-          <div className="relative w-full flex flex-col mb-8">
-            <div
-              className="absolute top-0 left-0 w-96 h-96 rounded-full filter blur-3xl opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: "linear-gradient(45deg, #2A43F8 24%, #2A43F8 50%, #4482ff 91%)",
-              }}
-            />
-
-            <div className="w-full relative flex items-start flex-col justify-start z-10 py-4">
-              <div className="flex items-center gap-3 mb-4">
-                <h2
-                  className="text-4xl sm:text-5xl font-extrabold text-left font-recoleta"
-                  style={{
-                    backgroundImage: "linear-gradient(45deg,#2A43F8 24%, #2A43F8 50%, #4482ff 91%)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  Manage Leads
-                </h2>
-              </div>
-              <p className="text-lg text-muted-foreground mb-6 text-left">
-                Organize, track, and manage all your leads categories
-              </p>
-
-              <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative w-full sm:w-80 md:w-96 max-w-md">
-                  <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    placeholder="Search leads..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 h-11 bg-background/60 backdrop-blur-xl border-border/50"
-                  />
-                </div>
-
-                {hasPermission(access, "leads", "createLead") && (
-                  <Button
-                    size="lg"
-                    className="h-11 gap-2 w-full sm:w-auto"
-                    onClick={() => setIsCreatingNewLead(true)}
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    New Lead Category
-                  </Button>
-                )}
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full flex flex-col items-start px-2 py-4"
+        >
+          {/* Search & Actions Bar */}
+          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="relative w-full sm:w-80 md:w-96 max-w-md">
+              <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search lead categories..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 h-11 bg-background/60 backdrop-blur-xl border-border/50"
+              />
             </div>
+
+            {canManageLeads(access) && (
+              <Button
+                size="lg"
+                className="h-11 gap-2 w-full sm:w-auto font-medium"
+                onClick={() => setIsCreatingNewLead(true)}
+              >
+                <PlusCircle className="h-4 w-4" />
+                New Lead Category
+              </Button>
+            )}
           </div>
 
           {/* List of Leads */}
@@ -200,13 +184,23 @@ function Leads() {
                   <div className="text-center">
                     <FolderOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
                     <p className="text-xl font-semibold text-muted-foreground mb-2">
-                      No leads found
+                      No lead categories found
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
                       {search
-                        ? "Try adjusting your search"
-                        : "Get started by creating your first lead category"}
+                        ? "Try adjusting your search query"
+                        : "Get started by creating your first lead category to organize team leads."}
                     </p>
+                    {canManageLeads(access) && !search && (
+                      <Button
+                        variant="outline"
+                        className="mt-6 gap-2"
+                        onClick={() => setIsCreatingNewLead(true)}
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        Create Lead Category
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -218,12 +212,14 @@ function Leads() {
                       key={lead.id}
                       className="p-6 flex items-start gap-6 md:gap-8 group hover:bg-background/40 transition-colors"
                     >
+                      {/* Left Badge - Index / Category Accent */}
                       <div className="shrink-0">
-                        <div className="w-14 h-14 rounded-lg bg-white/95 text-black flex items-center justify-center font-bold text-xl border border-border/30">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 text-primary flex items-center justify-center font-bold text-xl shadow-sm group-hover:border-primary/40 group-hover:scale-105 transition-all">
                           {idx + 1 + page * leadsPerPage}
                         </div>
                       </div>
 
+                      {/* Main Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3">
                           <h3 className="font-semibold text-lg md:text-xl line-clamp-1 text-foreground">
@@ -232,57 +228,65 @@ function Leads() {
                         </div>
 
                         <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-3.5 h-3.5 text-primary" />
-                            <span>{lead.memberCount || 0} members</span>
+                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>
+                              {lead.memberCount || 0} {lead.memberCount === 1 ? "member" : "members"}
+                            </span>
                           </div>
                         </div>
 
+                        {/* Action Buttons */}
                         <div className="mt-4 flex flex-wrap items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="min-w-[100px]"
+                            className="min-w-[105px] h-9 gap-1.5"
                             onClick={() =>
                               router.push(
                                 `/leads/details?id=${encodeURIComponent(lead.id)}&title=${encodeURIComponent(lead.title || "")}`
                               )
                             }
                           >
-                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            <Eye className="w-3.5 h-3.5 text-primary" />
                             View Members
                           </Button>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="min-w-[100px]"
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setTitle(lead.title || "");
-                            }}
-                          >
-                            <Edit className="w-3.5 h-3.5 mr-1" />
-                            Edit
-                          </Button>
+                          {canManageLeads(access) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="min-w-[90px] h-9 gap-1.5"
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setTitle(lead.title || "");
+                              }}
+                            >
+                              <Edit className="w-3.5 h-3.5 text-muted-foreground" />
+                              Edit
+                            </Button>
+                          )}
 
                           {hasPermission(access, "leads", "deleteLead") && (
                             <Button
                               variant="outline"
                               size="sm"
-                              className="min-w-[100px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="min-w-[90px] h-9 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 hover:border-destructive/40"
                               onClick={() => setLeadToDelete(lead)}
                             >
-                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              <Trash2 className="w-3.5 h-3.5" />
                               Delete
                             </Button>
                           )}
                         </div>
                       </div>
 
+                      {/* Right Count */}
                       <div className="shrink-0 text-right w-24">
-                        <div className="text-xs text-muted-foreground">Members</div>
-                        <div className="text-2xl font-bold">{lead.memberCount ?? 0}</div>
+                        <div className="text-xs text-muted-foreground font-medium">Members</div>
+                        <div className="text-2xl font-bold tracking-tight text-foreground">
+                          {lead.memberCount ?? 0}
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -331,41 +335,48 @@ function Leads() {
             )}
           </div>
 
+          {/* Edit Lead Dialog */}
           <Dialog
             open={Boolean(selectedLead)}
             onOpenChange={(open) => !open && setSelectedLead(null)}
           >
             {selectedLead && (
-              <DialogContent className="max-h-[80vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Edit Lead</DialogTitle>
-                  <DialogDescription>Update the details of the lead.</DialogDescription>
+                  <DialogTitle>Edit Lead Category</DialogTitle>
+                  <DialogDescription>Update the details of the lead category.</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-3 mt-2">
+                <div className="space-y-3 py-2">
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Lead Title"
+                    placeholder="Lead Category Title"
+                    className="h-11"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleUpdate();
+                      }
+                    }}
                   />
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="gap-2 sm:gap-0">
                   <DialogClose asChild>
-                    <Button variant="ghost">Cancel</Button>
+                    <Button variant="outline">Cancel</Button>
                   </DialogClose>
                   <Button
                     onClick={handleUpdate}
-                    disabled={updatingLeadId === selectedLead.id}
-                    className="bg-green-700 text-white hover:bg-green-800"
+                    disabled={updatingLeadId === selectedLead.id || !title.trim()}
                   >
                     {updatingLeadId === selectedLead.id ? (
-                      <span className="flex items-center">
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      <span className="flex items-center gap-2">
+                        <Loader className="h-4 w-4 animate-spin" />
                         Updating...
                       </span>
                     ) : (
-                      "Update"
+                      "Save Changes"
                     )}
                   </Button>
                 </DialogFooter>
@@ -373,6 +384,7 @@ function Leads() {
             )}
           </Dialog>
 
+          {/* Delete Lead AlertDialog */}
           <AlertDialog
             open={Boolean(leadToDelete)}
             onOpenChange={(open) => !open && setLeadToDelete(null)}
@@ -380,9 +392,10 @@ function Leads() {
             {leadToDelete && (
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Confirm Delete!!</AlertDialogTitle>
+                  <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action will permanently delete the lead and its members
+                    This action cannot be undone. This will permanently delete{" "}
+                    <strong className="text-foreground">{leadToDelete.title}</strong> and all associated members.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -390,11 +403,11 @@ function Leads() {
                   <AlertDialogAction
                     onClick={deleteLead}
                     disabled={deletingId === leadToDelete.id}
-                    className="bg-red-600 text-white hover:bg-red-700"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     {deletingId === leadToDelete.id ? (
-                      <span className="flex items-center">
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      <span className="flex items-center gap-2">
+                        <Loader className="h-4 w-4 animate-spin" />
                         Deleting...
                       </span>
                     ) : (
@@ -406,40 +419,48 @@ function Leads() {
             )}
           </AlertDialog>
 
+          {/* Create New Lead Dialog */}
           <Dialog
             open={isCreatingNewLead}
             onOpenChange={(open) => !open && setIsCreatingNewLead(false)}
           >
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Create New Lead</DialogTitle>
-                <DialogDescription>Enter the title for the new lead.</DialogDescription>
+                <DialogTitle>Create New Lead Category</DialogTitle>
+                <DialogDescription>Enter a title for the new lead category.</DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-3 mt-2">
+              <div className="space-y-3 py-2">
                 <Input
                   value={newLeadTitle}
                   onChange={(e) => setNewLeadTitle(e.target.value)}
-                  placeholder="Lead Title"
+                  placeholder="e.g. Lead 2024 - 2025"
+                  className="h-11"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateNewLead();
+                    }
+                  }}
                 />
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
+                  <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button
                   onClick={handleCreateNewLead}
-                  disabled={creatingLead}
-                  className="bg-green-700 text-white hover:bg-green-800"
+                  disabled={creatingLead || !newLeadTitle.trim()}
                 >
                   {creatingLead ? (
-                    <span className="flex items-center">
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    <span className="flex items-center gap-2">
+                      <Loader className="h-4 w-4 animate-spin" />
                       Creating...
                     </span>
                   ) : (
-                    "Create"
+                    "Create Category"
                   )}
                 </Button>
               </DialogFooter>
@@ -459,7 +480,7 @@ function Leads() {
               </a>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </>
   );

@@ -153,7 +153,7 @@ function Emails() {
         status,
       });
       setResponseToView((prev) => (prev?.id === responseupdate.id ? { ...prev, status } : prev));
-    } catch {}
+    } catch { }
   };
 
   const deleteResponse = async () => {
@@ -161,7 +161,7 @@ function Emails() {
     try {
       await deleteEmailMutation.mutateAsync(String(responseToDelete.id));
       setResponseToDelete(null);
-    } catch {}
+    } catch { }
   };
 
   const fetchFilteredResponses = async (type: string) => {
@@ -194,11 +194,15 @@ function Emails() {
     const csvContent = [
       ["Name", "Email", "Subject", "Message", "Status"],
       ...dataToExport.map((response: any) => [
-        response.Name,
-        response.Email,
-        response.Subject,
-        response.Message,
-        response.status === null ? "Waiting" : response.status === true ? "Responded" : "On Hold",
+        `"${(response.name || response.Name || "").replace(/"/g, '""')}"`,
+        `"${(response.email || response.Email || "").replace(/"/g, '""')}"`,
+        `"${(response.subject || response.Subject || "").replace(/"/g, '""')}"`,
+        `"${(response.message || response.Message || "").replace(/"/g, '""')}"`,
+        response.status === null || response.status === undefined
+          ? "Waiting"
+          : response.status === true
+            ? "Responded"
+            : "On Hold",
       ]),
     ]
       .map((e) => e.join(","))
@@ -219,7 +223,7 @@ function Emails() {
     const vcfContent = dataToExport
       .map(
         (response: any) =>
-          `BEGIN:VCARD\nVERSION:3.0\nFN:${response.Name}\nEMAIL:${response.Email}\nEND:VCARD`,
+          `BEGIN:VCARD\nVERSION:3.0\nFN:${response.name || response.Name || ""}\nEMAIL:${response.email || response.Email || ""}\nEND:VCARD`,
       )
       .join("\n");
 
@@ -242,10 +246,10 @@ function Emails() {
 
     try {
       await sendContactResponseEmail({
-        to: responseToReply.Email,
-        recipientName: responseToReply.Name,
-        originalSubject: responseToReply.Subject,
-        originalMessage: responseToReply.Message,
+        to: responseToReply.email || responseToReply.Email,
+        recipientName: responseToReply.name || responseToReply.Name,
+        originalSubject: responseToReply.subject || responseToReply.Subject,
+        originalMessage: responseToReply.message || responseToReply.Message,
         responseMessage: replyMessage,
         responderName:
           getEmailConfig().senderName ||
@@ -255,7 +259,7 @@ function Emails() {
       toast.success("Reply sent successfully!");
       setResponseToReply(null);
       setReplyMessage("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send reply:", error);
       toast.error(error.message || "Failed to send reply");
     } finally {
@@ -459,7 +463,7 @@ function Emails() {
             </div>
           </div>
 
-          {}
+          { }
           <div className="w-full">
             {filteredResponses.length === 0 ? (
               <Card className="rounded-2xl bg-background/60 border border-border/50 backdrop-blur-xl w-full">
@@ -487,29 +491,28 @@ function Emails() {
                       key={response.id}
                       className="p-6 flex items-start gap-6 md:gap-8 group hover:bg-background/40 transition-colors"
                     >
-                      {}
+                      {/* Avatar */}
                       <div className="shrink-0">
-                        <div className="w-14 h-14 rounded-full bg-white/95 text-black flex items-center justify-center font-bold text-xl border border-border/30">
-                          {response.Name?.charAt(0).toUpperCase() || "?"}
+                        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-xl">
+                          {(response.name || response.Name)?.charAt(0).toUpperCase() || "?"}
                         </div>
                       </div>
 
-                      {}
+                      {/* Main Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-semibold text-lg md:text-xl line-clamp-1 text-foreground">
-                            {response.Name}
+                            {response.name || response.Name || "Anonymous"}
                           </h3>
                           <Badge
-                            className={`${
-                              response.status === null
-                                ? "bg-orange-500 text-white border-none"
-                                : response.status === true
-                                  ? "bg-green-700 text-white border-none"
-                                  : "bg-red-600 text-white border-none"
-                            }`}
+                            className={`${response.status === null || response.status === undefined
+                              ? "bg-orange-500 text-white border-none"
+                              : response.status === true
+                                ? "bg-green-700 text-white border-none"
+                                : "bg-red-600 text-white border-none"
+                              }`}
                           >
-                            {response.status === null
+                            {response.status === null || response.status === undefined
                               ? "Waiting"
                               : response.status === true
                                 ? "Responded"
@@ -518,21 +521,27 @@ function Emails() {
                         </div>
 
                         <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-4">
-                          {response.Email && (
+                          {(response.email || response.Email) && (
                             <div className="flex items-center gap-2">
                               <Mail className="w-3.5 h-3.5 text-primary" />
-                              <span className="truncate">{response.Email}</span>
+                              <span className="truncate">{response.email || response.Email}</span>
                             </div>
                           )}
-                          {response.Subject && (
+                          {(response.subject || response.Subject) && (
                             <div className="flex items-center gap-2">
                               <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                              <span className="truncate max-w-xs">{response.Subject}</span>
+                              <span className="truncate max-w-xs">{response.subject || response.Subject}</span>
                             </div>
                           )}
                         </div>
 
-                        {}
+                        {(response.message || response.Message) && (
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                            {response.message || response.Message}
+                          </p>
+                        )}
+
+                        { }
                         <div className="mt-4 flex flex-wrap items-center gap-2">
                           <div className="flex items-center gap-2">
                             <DropdownMenu>
@@ -559,7 +568,7 @@ function Emails() {
                                   }}
                                 >
                                   {updatingStatusId === response.id &&
-                                  updatingStatusValue === true ? (
+                                    updatingStatusValue === true ? (
                                     <span className="flex items-center">
                                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                                       Updating...
@@ -578,7 +587,7 @@ function Emails() {
                                   }}
                                 >
                                   {updatingStatusId === response.id &&
-                                  updatingStatusValue === false ? (
+                                    updatingStatusValue === false ? (
                                     <span className="flex items-center">
                                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                                       Updating...
@@ -597,7 +606,7 @@ function Emails() {
                                   }}
                                 >
                                   {updatingStatusId === response.id &&
-                                  updatingStatusValue === null ? (
+                                    updatingStatusValue === null ? (
                                     <span className="flex items-center">
                                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                                       Updating...
@@ -637,7 +646,7 @@ function Emails() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="min-w-[90px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 hover:border-destructive/40"
                             onClick={() => setResponseToDelete(response)}
                           >
                             <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -646,12 +655,12 @@ function Emails() {
                         </div>
                       </div>
 
-                      {}
-                      <div className="shrink-0 text-right w-28">
+                      {/* Right Timestamp */}
+                      <div className="shrink-0 text-right w-32">
                         <div className="text-xs text-muted-foreground">Received</div>
-                        <div className="text-sm font-semibold">
-                          {response.created_at ? (
-                            <FormatDate dateString={response.created_at} />
+                        <div className="text-xs sm:text-sm font-medium text-foreground mt-0.5">
+                          {response.createdAt || response.created_at ? (
+                            <FormatDate dateString={response.createdAt || response.created_at} />
                           ) : (
                             "-"
                           )}
@@ -663,7 +672,7 @@ function Emails() {
               </div>
             )}
 
-            {}
+            { }
             {filteredResponses.length > 0 && (
               <div className="fixed bottom-6 right-8 z-30 pointer-events-auto">
                 <div className="inline-flex items-center gap-3 rounded-full bg-background/85 backdrop-blur-2xl border border-border/80 px-4 py-2.5 shadow-xl text-xs text-muted-foreground transition-all duration-200 hover:shadow-2xl">
@@ -703,7 +712,7 @@ function Emails() {
             )}
           </div>
 
-          {}
+          { }
           {responseToView && (
             <AlertDialog
               open={Boolean(responseToView)}
@@ -714,32 +723,32 @@ function Emails() {
               <AlertDialogContent className="overflow-hidden">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-start">
-                    Message Details - {responseToView.Name}
+                    Message Details - {responseToView.name || responseToView.Name || "Inquiry"}
                   </AlertDialogTitle>
 
-                  <AlertDialogDescription className="text-start space-y-3">
+                  <AlertDialogDescription className="text-start space-y-3 pt-2">
                     <div>
-                      <strong>Subject:</strong>
+                      <strong className="text-foreground text-xs uppercase tracking-wider font-semibold">Subject:</strong>
                       <p className="wrap-break-word text-foreground mt-1">
-                        {responseToView.Subject || "No subject"}
+                        {responseToView.subject || responseToView.Subject || "No subject"}
                       </p>
                     </div>
                     <div>
-                      <strong>Message:</strong>
-                      <p className="wrap-break-word text-foreground mt-1 whitespace-pre-wrap">
-                        {responseToView.Message || "No message"}
+                      <strong className="text-foreground text-xs uppercase tracking-wider font-semibold">Message:</strong>
+                      <p className="wrap-break-word text-foreground mt-1 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3 rounded-lg border border-border/50">
+                        {responseToView.message || responseToView.Message || "No message"}
                       </p>
                     </div>
                     <div>
-                      <strong>Email:</strong>
+                      <strong className="text-foreground text-xs uppercase tracking-wider font-semibold">Email:</strong>
                       <p className="wrap-break-word text-foreground mt-1">
-                        {responseToView.Email || "Not provided"}
+                        {responseToView.email || responseToView.Email || "Not provided"}
                       </p>
                     </div>
                     <div>
-                      <strong>Status:</strong>
+                      <strong className="text-foreground text-xs uppercase tracking-wider font-semibold">Status:</strong>
                       <p className="wrap-break-word text-foreground mt-1">
-                        {responseToView.status === null
+                        {responseToView.status === null || responseToView.status === undefined
                           ? "Waiting"
                           : responseToView.status === true
                             ? "Responded"
@@ -769,7 +778,7 @@ function Emails() {
             {responseToReply && (
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Reply to {responseToReply.Name}</DialogTitle>
+                  <DialogTitle>Reply to {responseToReply.name || responseToReply.Name || "Sender"}</DialogTitle>
                   <DialogDescription>
                     Send a response email to this contact form submission
                   </DialogDescription>
@@ -780,10 +789,10 @@ function Emails() {
                   <div className="bg-muted/50 p-4 rounded-lg border border-border">
                     <div className="text-sm font-semibold mb-2">Original Message:</div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      <strong>Subject:</strong> {responseToReply.Subject}
+                      <strong>Subject:</strong> {responseToReply.subject || responseToReply.Subject}
                     </div>
                     <div className="text-sm text-foreground whitespace-pre-wrap">
-                      {responseToReply.Message}
+                      {responseToReply.message || responseToReply.Message}
                     </div>
                   </div>
 
@@ -836,14 +845,14 @@ function Emails() {
                   <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action will permanently delete the response from{" "}
-                    <strong>{responseToDelete.Name}</strong>. This action cannot be undone.
+                    <strong>{responseToDelete.name || responseToDelete.Name || "this sender"}</strong>. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteResponse}
-                    className="bg-red-600 text-white hover:bg-red-700"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     Delete
                   </AlertDialogAction>
@@ -852,7 +861,7 @@ function Emails() {
             )}
           </AlertDialog>
 
-          {}
+          { }
           <div className="w-full mt-12 text-center">
             <div className="flex items-center justify-center text-xs text-muted-foreground">
               Designed & Built with{" "}

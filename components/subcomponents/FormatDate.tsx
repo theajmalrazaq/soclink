@@ -1,5 +1,7 @@
-export function FormatDate({ dateString }: { dateString: string | number | Date }) {
+export function FormatDate({ dateString }: { dateString?: string | number | Date | null }) {
+  if (!dateString) return <span>-</span>;
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return <span>-</span>;
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const year = date.getFullYear();
