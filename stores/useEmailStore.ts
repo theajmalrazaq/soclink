@@ -51,7 +51,13 @@ export const useEmailStore = create<EmailState>((set) => ({
   setStatusFilter: (statusFilter) => set({ statusFilter, page: 0 }),
   setExportFilter: (exportFilter) => set({ exportFilter }),
   setPage: (page) => set({ page }),
-  setResponseToView: (responseToView) => set({ responseToView }),
+  setResponseToView: (responseToView) =>
+    set((state) => ({
+      responseToView:
+        typeof responseToView === "function"
+          ? responseToView(state.responseToView)
+          : responseToView,
+    })),
   setResponseToReply: (responseToReply) => set({ responseToReply }),
   setReplyMessage: (replyMessage) => set({ replyMessage }),
   setResponseToDelete: (responseToDelete) => set({ responseToDelete }),

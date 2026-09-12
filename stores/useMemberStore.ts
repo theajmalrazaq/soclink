@@ -32,6 +32,12 @@ export const useMemberStore = create<MemberState>((set) => ({
   setTeamFilter: (teamFilter) => set({ teamFilter, page: 0 }),
   setPage: (page) => set({ page }),
   setExportFilter: (exportFilter) => set({ exportFilter }),
-  setResponseToView: (responseToView) => set({ responseToView }),
+  setResponseToView: (responseToView) =>
+    set((state) => ({
+      responseToView:
+        typeof responseToView === "function"
+          ? responseToView(state.responseToView)
+          : responseToView,
+    })),
   setResponseToDelete: (responseToDelete) => set({ responseToDelete }),
 }));

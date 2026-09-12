@@ -493,7 +493,7 @@ function Emails() {
                     >
                       {/* Avatar */}
                       <div className="shrink-0">
-                        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-xl">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 text-primary flex items-center justify-center font-bold text-xl shadow-sm group-hover:border-primary/40 group-hover:scale-105 transition-all">
                           {(response.name || response.Name)?.charAt(0).toUpperCase() || "?"}
                         </div>
                       </div>
