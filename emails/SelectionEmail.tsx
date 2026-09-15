@@ -24,11 +24,7 @@ interface SelectionEmailProps {
   config?: any;
 }
 
-export const SelectionEmail = ({
-  recipientName,
-  role,
-  config = {},
-}: SelectionEmailProps) => {
+export const SelectionEmail = ({ recipientName, role, config = {} }: SelectionEmailProps) => {
   const cfg = { ...DEFAULT_EMAIL_CONFIG, ...config };
 
   return (
@@ -120,7 +116,8 @@ export const SelectionEmail = ({
                   Dear {recipientName || "Team Member"}, <br />
                   <br />
                   We are thrilled to inform you that you have been selected
-                  {role ? ` for ${role}` : ""}! Welcome to the {cfg.brandName || "organization"} family. 🎊
+                  {role ? ` for ${role}` : ""}! Welcome to the {cfg.brandName || "organization"}{" "}
+                  family. 🎊
                 </Text>
               </Section>
 
@@ -132,7 +129,8 @@ export const SelectionEmail = ({
                   Welcome to the Team! 🎉
                 </Heading>
                 <Text className="m-0 mb-4 text-sm text-muted-foreground leading-6 text-left">
-                  We're excited to have you join {cfg.brandName || "us"}! Keep an eye out for onboarding details and next steps.
+                  We're excited to have you join {cfg.brandName || "us"}! Keep an eye out for
+                  onboarding details and next steps.
                 </Text>
               </Section>
 
@@ -164,11 +162,15 @@ export const SelectionEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

@@ -221,9 +221,7 @@ function Home() {
           {/* Quick Settings Row */}
           {hasPermission(access, "dashboard", "quickSettings") && (
             <div className="p-6 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-xl w-full">
-              <h3 className="text-sm font-bold mb-4 text-foreground">
-                Quick Settings
-              </h3>
+              <h3 className="text-sm font-bold mb-4 text-foreground">Quick Settings</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex justify-between items-center p-4 rounded-xl bg-background/40 hover:bg-background/60 transition-all border border-border/30">
                   <div className="pr-3">

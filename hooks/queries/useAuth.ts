@@ -68,8 +68,7 @@ export function useUserSession() {
           const usersList = json.users || [];
           const u = usersList.find(
             (usr: any) =>
-              usr.email?.toLowerCase() === user.email?.toLowerCase() ||
-              usr.user_id === user.id
+              usr.email?.toLowerCase() === user.email?.toLowerCase() || usr.user_id === user.id,
           );
 
           if (u) {
@@ -88,7 +87,12 @@ export function useUserSession() {
         console.error("Error loading user profile in session query:", err);
       }
 
-      if (!permissions && (userData.role === "admin" || user.user_metadata?.role === "admin" || user.user_metadata?.role === "custom")) {
+      if (
+        !permissions &&
+        (userData.role === "admin" ||
+          user.user_metadata?.role === "admin" ||
+          user.user_metadata?.role === "custom")
+      ) {
         permissions = DEFAULT_PERMISSIONS;
       }
 

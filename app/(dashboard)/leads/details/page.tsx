@@ -73,7 +73,8 @@ function LeadDetails() {
   const outlet = useOutletContext();
   const permissions = outlet?.permissions;
   const lead_id = searchParams?.get("id") || searchParams?.get("lead_id") || "";
-  const lead_title = searchParams?.get("title") || searchParams?.get("lead_title") || "Lead Members";
+  const lead_title =
+    searchParams?.get("title") || searchParams?.get("lead_title") || "Lead Members";
 
   const [exporting, setExporting] = useState(false);
 
@@ -291,7 +292,11 @@ function LeadDetails() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="lg" variant="outline" className="h-11 gap-2 flex-1 md:flex-none">
-                      {exporting ? <Loader className="h-4 w-4 animate-spin" /> : <File className="h-4 w-4" />}
+                      {exporting ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <File className="h-4 w-4" />
+                      )}
                       Export
                       {exportFilter && exportFilter !== "all" && (
                         <span className="ml-2 text-xs text-muted-foreground">

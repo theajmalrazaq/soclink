@@ -24,11 +24,7 @@ interface InductionEmailProps {
   config?: any;
 }
 
-export const InductionEmail = ({
-  name,
-  deadline,
-  config = {},
-}: InductionEmailProps) => {
+export const InductionEmail = ({ name, deadline, config = {} }: InductionEmailProps) => {
   const cfg = { ...DEFAULT_EMAIL_CONFIG, ...config };
 
   return (
@@ -124,7 +120,9 @@ export const InductionEmail = ({
                   {name ? `Dear ${name},` : "Hello,"}
                   <br />
                   <br />
-                  We are delighted to open inductions for {cfg.brandName || "our organization"}! ✨ Join a vibrant community dedicated to fostering leadership, innovation, and impact. 💡
+                  We are delighted to open inductions for {cfg.brandName || "our organization"}! ✨
+                  Join a vibrant community dedicated to fostering leadership, innovation, and
+                  impact. 💡
                 </Text>
 
                 {deadline && (
@@ -153,7 +151,8 @@ export const InductionEmail = ({
                   Why Join {cfg.brandName || "Us"}? 🌟
                 </Heading>
                 <Text className="m-0 mb-4 text-sm text-muted-foreground leading-6 text-left">
-                  Get hands-on experience, organize impactful events, network with peers and experts, and accelerate your personal growth.
+                  Get hands-on experience, organize impactful events, network with peers and
+                  experts, and accelerate your personal growth.
                 </Text>
               </Section>
 
@@ -185,11 +184,15 @@ export const InductionEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

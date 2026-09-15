@@ -170,9 +170,13 @@ function EventDetails() {
   const deleteRegMutation = useDeleteRegistrationMutation(event_id, is_competition);
 
   // Granular loading states
-  const updatingStatusId = updateRegMutation.isPending ? (updateRegMutation.variables as any)?.id : null;
+  const updatingStatusId = updateRegMutation.isPending
+    ? (updateRegMutation.variables as any)?.id
+    : null;
   const updatingStatusValue = (updateRegMutation.variables as any)?.patch?.status;
-  const updatingAttendanceId = updateRegMutation.isPending ? (updateRegMutation.variables as any)?.id : null;
+  const updatingAttendanceId = updateRegMutation.isPending
+    ? (updateRegMutation.variables as any)?.id
+    : null;
   const updatingAttendanceValue = (updateRegMutation.variables as any)?.patch?.attendance;
   const deletingId = deleteRegMutation.isPending ? responseToDelete?.id : null;
 
@@ -1193,7 +1197,8 @@ function EventDetails() {
                     <SelectContent>
                       {filteredResponses
                         .filter(
-                          (r: any) => r.status === true && !winners.some((w: any) => w.response_id === r.id),
+                          (r: any) =>
+                            r.status === true && !winners.some((w: any) => w.response_id === r.id),
                         )
                         .map((response: any) => (
                           <SelectItem key={response.id} value={response.id.toString()}>

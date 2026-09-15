@@ -17,7 +17,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const leadId = parseInt(params.id, 10);
   try {
     const body = await req.json();
-    const res = await db.insert(leadsData).values({ ...body, lead_id: leadId }).returning();
+    const res = await db
+      .insert(leadsData)
+      .values({ ...body, lead_id: leadId })
+      .returning();
     const created = res[0];
     return NextResponse.json({ success: true, member: created });
   } catch (err: any) {

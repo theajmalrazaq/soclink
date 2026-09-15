@@ -75,7 +75,11 @@ export const AnnouncementEmail = ({ title, message, config = {} }: AnnouncementE
           className="font-sans py-10 px-4"
           style={{ backgroundColor: cfg.backgroundColor || "#fafafa" }}
         >
-          <Preview>{title ? `${title} - ${cfg.brandName || "Announcement"}` : `Announcement from ${cfg.brandName || "Society"}`}</Preview>
+          <Preview>
+            {title
+              ? `${title} - ${cfg.brandName || "Announcement"}`
+              : `Announcement from ${cfg.brandName || "Society"}`}
+          </Preview>
           <Container className="mx-auto w-full max-w-[600px] p-0">
             <Section
               className="rounded-xl border border-border"
@@ -126,7 +130,9 @@ export const AnnouncementEmail = ({ title, message, config = {} }: AnnouncementE
                   Stay Updated 🔔
                 </Heading>
                 <Text className="m-0 mb-4 text-sm text-muted-foreground leading-6 text-left">
-                  Keep an eye on your inbox for more updates and announcements from {cfg.brandName || "our team"}. Follow us on social media to stay connected with our community!
+                  Keep an eye on your inbox for more updates and announcements from{" "}
+                  {cfg.brandName || "our team"}. Follow us on social media to stay connected with
+                  our community!
                 </Text>
               </Section>
 
@@ -157,11 +163,15 @@ export const AnnouncementEmail = ({ title, message, config = {} }: AnnouncementE
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground mt-4 pt-3 border-t border-border text-left">

@@ -170,9 +170,7 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
     }));
   };
 
-  const activeModulesCount = PERMISSION_CONFIG.filter(
-    (c) => currentMatrix[c.key]?.enabled,
-  ).length;
+  const activeModulesCount = PERMISSION_CONFIG.filter((c) => currentMatrix[c.key]?.enabled).length;
 
   return (
     <div className="space-y-2.5 max-h-[46vh] overflow-y-auto pr-1 py-0.5">
@@ -217,9 +215,7 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
           const isExpanded = Boolean(expanded[config.key]);
           const totalSubs = config.subPermissions.length;
           const activeSubs =
-            totalSubs > 0
-              ? config.subPermissions.filter((s) => pageState.sub?.[s.key]).length
-              : 0;
+            totalSubs > 0 ? config.subPermissions.filter((s) => pageState.sub?.[s.key]).length : 0;
 
           return (
             <div
@@ -305,9 +301,7 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
                       <div
                         key={sub.key}
                         className={`px-3.5 py-2 flex items-center justify-between gap-3 transition-colors ${
-                          pageState.enabled
-                            ? "hover:bg-muted/30"
-                            : "opacity-50 pointer-events-none"
+                          pageState.enabled ? "hover:bg-muted/30" : "opacity-50 pointer-events-none"
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -729,7 +723,9 @@ function Users() {
               /* STEP 1: Account Info Form */
               <div className="space-y-3.5 py-1">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-xs font-semibold">Full Name</Label>
+                  <Label htmlFor="name" className="text-xs font-semibold">
+                    Full Name
+                  </Label>
                   <div className="relative">
                     <User className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
                     <Input
@@ -744,7 +740,9 @@ function Users() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-semibold">Email Address</Label>
+                  <Label htmlFor="email" className="text-xs font-semibold">
+                    Email Address
+                  </Label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
                     <Input
@@ -760,7 +758,9 @@ function Users() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="role" className="text-xs font-semibold">Role / Designation</Label>
+                  <Label htmlFor="role" className="text-xs font-semibold">
+                    Role / Designation
+                  </Label>
                   <div className="relative">
                     <Shield className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
                     <Input
@@ -774,7 +774,9 @@ function Users() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-xs font-semibold">Initial Password</Label>
+                  <Label htmlFor="password" className="text-xs font-semibold">
+                    Initial Password
+                  </Label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
                     <Input
@@ -860,7 +862,9 @@ function Users() {
           {editingUser && (
             <div className="flex-1 flex flex-col min-h-0 space-y-3 pt-1">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-role" className="text-xs font-semibold">Role / Designation</Label>
+                <Label htmlFor="edit-role" className="text-xs font-semibold">
+                  Role / Designation
+                </Label>
                 <div className="relative">
                   <Shield className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
                   <Input

@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
     const allMembersData = await db.select({ lead_id: leadsData.lead_id }).from(leadsData);
 
     const enriched = paged.map((lead) => {
-      const memberCount = allMembersData.filter((m) => String(m.lead_id) === String(lead.id)).length;
+      const memberCount = allMembersData.filter(
+        (m) => String(m.lead_id) === String(lead.id),
+      ).length;
       return { ...lead, memberCount };
     });
 

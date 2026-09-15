@@ -41,7 +41,7 @@ interface NavbarProps {
 
 export function Navbar({ access, user, children }: NavbarProps) {
   const [loading, setLoading] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -98,8 +98,9 @@ export function Navbar({ access, user, children }: NavbarProps) {
   }, [logoutMutation, router]);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    const current = resolvedTheme || theme;
+    setTheme(current === "dark" ? "light" : "dark");
+  }, [resolvedTheme, theme, setTheme]);
 
   const navItems = useMemo(() => {
     const items = [
@@ -389,38 +390,25 @@ export function Navbar({ access, user, children }: NavbarProps) {
               className={`flex items-center gap-2 rounded-full border border-border/80 bg-background/60 text-xs font-medium transition-all hover:bg-accent hover:text-foreground cursor-pointer ${
                 isCollapsed ? "size-9 justify-center p-0 rounded-full" : "w-full px-3 py-1.5"
               }`}
-              title={isCollapsed ? (theme === "dark" ? "Dark Mode" : "Light Mode") : undefined}
+              title="Toggle Theme"
               aria-label="Toggle Theme"
             >
-              {theme === "dark" ? (
-                <>
-                  <Moon className="size-3.5 shrink-0 text-yellow-400" />
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.12 }}
-                    >
-                      Dark Mode
-                    </motion.span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Sun className="size-3.5 shrink-0 text-amber-500" />
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.12 }}
-                    >
-                      Light Mode
-                    </motion.span>
-                  )}
-                </>
-              )}
+              <Sun className="size-3.5 shrink-0 text-amber-500 block dark:hidden" />
+              <Moon className="size-3.5 shrink-0 text-yellow-400 hidden dark:block" />
+              <AnimatePresence mode="wait">
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="truncate"
+                  >
+                    <span className="block dark:hidden">Light Mode</span>
+                    <span className="hidden dark:block">Dark Mode</span>
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
           </div>
 

@@ -29,7 +29,7 @@ export async function GET() {
           upcomingeventstatus: true,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
@@ -41,7 +41,11 @@ export async function POST(req: NextRequest) {
 
     const existing = await db.select().from(appSettings).limit(1);
     if (existing && existing.length > 0) {
-      const res = await db.update(appSettings).set(patch).where(eq(appSettings.id, existing[0].id)).returning();
+      const res = await db
+        .update(appSettings)
+        .set(patch)
+        .where(eq(appSettings.id, existing[0].id))
+        .returning();
       saved = res[0];
     } else {
       const res = await db.insert(appSettings).values(patch).returning();

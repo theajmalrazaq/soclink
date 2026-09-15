@@ -23,10 +23,7 @@ interface RejectionEmailProps {
   config?: any;
 }
 
-export const RejectionEmail = ({
-  recipientName,
-  config = {},
-}: RejectionEmailProps) => {
+export const RejectionEmail = ({ recipientName, config = {} }: RejectionEmailProps) => {
   const cfg = { ...DEFAULT_EMAIL_CONFIG, ...config };
 
   return (
@@ -117,10 +114,14 @@ export const RejectionEmail = ({
                 <Text className="text-base text-foreground leading-7 mb-6 text-left">
                   Hello {recipientName || "Applicant"}, <br />
                   <br />
-                  Thank you for applying to {cfg.brandName || "our organization"}. We sincerely appreciate your time, effort, and interest in joining our community. Unfortunately, due to limited spots, we are unable to offer you a position at this time.
+                  Thank you for applying to {cfg.brandName || "our organization"}. We sincerely
+                  appreciate your time, effort, and interest in joining our community.
+                  Unfortunately, due to limited spots, we are unable to offer you a position at this
+                  time.
                   <br />
                   <br />
-                  We encourage you to participate in our events and reapply in future recruitment cycles!
+                  We encourage you to participate in our events and reapply in future recruitment
+                  cycles!
                 </Text>
               </Section>
 
@@ -152,11 +153,15 @@ export const RejectionEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

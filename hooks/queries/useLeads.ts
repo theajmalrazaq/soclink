@@ -15,7 +15,9 @@ export function useLeadsQuery({ page = 0, limit = 10, search = "" }: LeadsQueryP
   return useQuery({
     queryKey: [...LEADS_QUERY_KEY, { page, limit, search }],
     queryFn: async () => {
-      const res = await fetch(`/api/leads?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      const res = await fetch(
+        `/api/leads?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch leads");
       const json = await res.json();
       return {

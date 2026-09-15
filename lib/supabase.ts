@@ -12,15 +12,9 @@ function getSupabaseConfig(): { url: string; key: string } {
     }
   }
 
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL ||
-    "";
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    "";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
 
   return { url, key };
 }
@@ -29,7 +23,7 @@ const config = getSupabaseConfig();
 
 export const supabase = createClient(
   config.url || "https://placeholder.supabase.co",
-  config.key || "placeholder"
+  config.key || "placeholder",
 );
 export const Supabase = supabase;
 export default supabase;

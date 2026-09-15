@@ -132,7 +132,9 @@ export function CertificateGenerator({
     let code: string;
     let existingCert: any = null;
     try {
-      const res = await fetch(`/api/events/${eventId}/certifications?name=${encodeURIComponent(member.name)}`);
+      const res = await fetch(
+        `/api/events/${eventId}/certifications?name=${encodeURIComponent(member.name)}`,
+      );
       const json = await res.json();
       existingCert = json.certificate;
     } catch {}

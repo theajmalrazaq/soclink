@@ -25,7 +25,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const eventId = parseInt(params.id, 10);
   try {
     const body = await req.json();
-    const res = await db.insert(certification).values({ ...body, event_id: eventId }).returning();
+    const res = await db
+      .insert(certification)
+      .values({ ...body, event_id: eventId })
+      .returning();
     const cert = res[0];
     return NextResponse.json({ success: true, certificate: cert });
   } catch (err: any) {

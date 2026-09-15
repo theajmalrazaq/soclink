@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         (e) =>
           e.name?.toLowerCase().includes(search) ||
           e.email?.toLowerCase().includes(search) ||
-          e.subject?.toLowerCase().includes(search)
+          e.subject?.toLowerCase().includes(search),
       );
     }
 
@@ -57,7 +57,11 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, status } = body;
-    const res = await db.update(contactResponses).set({ status }).where(eq(contactResponses.id, id)).returning();
+    const res = await db
+      .update(contactResponses)
+      .set({ status })
+      .where(eq(contactResponses.id, id))
+      .returning();
     const updated = res[0];
     return NextResponse.json({ success: true, email: updated });
   } catch (err: any) {

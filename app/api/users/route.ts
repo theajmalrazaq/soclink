@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
       name,
       email,
       role,
-      permissions: typeof permissionMatrix === "object" ? JSON.stringify(permissionMatrix) : permissionMatrix,
+      permissions:
+        typeof permissionMatrix === "object" ? JSON.stringify(permissionMatrix) : permissionMatrix,
       user_id: authUserId,
     };
 
@@ -53,7 +54,8 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { id, permissions, role } = body;
 
-    const formattedPermissions = typeof permissions === "object" ? JSON.stringify(permissions) : permissions;
+    const formattedPermissions =
+      typeof permissions === "object" ? JSON.stringify(permissions) : permissions;
 
     const res = await db
       .update(users)

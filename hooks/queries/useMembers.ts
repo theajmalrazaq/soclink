@@ -23,7 +23,7 @@ export function useMembersQuery({
     queryKey: [...MEMBERS_QUERY_KEY, { page, limit, status, team, search }],
     queryFn: async () => {
       const res = await fetch(
-        `/api/members?page=${page}&limit=${limit}&status=${status}&team=${team}&search=${encodeURIComponent(search)}`
+        `/api/members?page=${page}&limit=${limit}&status=${status}&team=${team}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch members");
       const json = await res.json();

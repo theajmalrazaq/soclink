@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         (r) =>
           r.name?.toLowerCase().includes(search) ||
           r.roll_no?.toLowerCase().includes(search) ||
-          r.email?.toLowerCase().includes(search)
+          r.email?.toLowerCase().includes(search),
       );
     }
 
@@ -80,7 +80,11 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, status } = body;
-    const res = await db.update(inductionResponses).set({ status }).where(eq(inductionResponses.id, id)).returning();
+    const res = await db
+      .update(inductionResponses)
+      .set({ status })
+      .where(eq(inductionResponses.id, id))
+      .returning();
     const updated = res[0];
     return NextResponse.json({ success: true, induction: updated });
   } catch (err: any) {

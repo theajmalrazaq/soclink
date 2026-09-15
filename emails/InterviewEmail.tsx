@@ -132,7 +132,8 @@ export const InterviewEmail = ({
                   Dear {candidateName || "Candidate"},
                   <br />
                   <br />
-                  Congratulations on making it to the interview stage! We're excited to meet you and learn more about your skills and passion. 🚀
+                  Congratulations on making it to the interview stage! We're excited to meet you and
+                  learn more about your skills and passion. 🚀
                 </Text>
 
                 {meetingLink && (
@@ -211,11 +212,15 @@ export const InterviewEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

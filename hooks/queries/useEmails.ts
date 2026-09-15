@@ -10,12 +10,17 @@ interface EmailsQueryParams {
   search?: string;
 }
 
-export function useEmailsQuery({ page = 0, limit = 10, status = "all", search = "" }: EmailsQueryParams = {}) {
+export function useEmailsQuery({
+  page = 0,
+  limit = 10,
+  status = "all",
+  search = "",
+}: EmailsQueryParams = {}) {
   return useQuery({
     queryKey: [...EMAILS_QUERY_KEY, { page, limit, status, search }],
     queryFn: async () => {
       const res = await fetch(
-        `/api/emails?page=${page}&limit=${limit}&status=${status}&search=${encodeURIComponent(search)}`
+        `/api/emails?page=${page}&limit=${limit}&status=${status}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch emails");
       const json = await res.json();

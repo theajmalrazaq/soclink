@@ -18,11 +18,18 @@ interface EventsQueryParams {
 }
 
 // Fetch events with pagination & enrichment
-export function useEventsQuery({ page = 0, limit = 10, search = "", status = "all" }: EventsQueryParams = {}) {
+export function useEventsQuery({
+  page = 0,
+  limit = 10,
+  search = "",
+  status = "all",
+}: EventsQueryParams = {}) {
   return useQuery({
     queryKey: [...EVENTS_QUERY_KEY, { page, limit, search, status }],
     queryFn: async () => {
-      const res = await fetch(`/api/events?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      const res = await fetch(
+        `/api/events?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch events");
       const json = await res.json();
       return {
@@ -145,7 +152,9 @@ export function useEventRegistrationsQuery(eventId: any, isCompetition?: boolean
     queryKey: EVENT_REGISTRATIONS_KEY(eventId, isCompetition),
     queryFn: async () => {
       if (!eventId) return [];
-      const res = await fetch(`/api/events/${eventId}/registrations?isCompetition=${Boolean(isCompetition)}`);
+      const res = await fetch(
+        `/api/events/${eventId}/registrations?isCompetition=${Boolean(isCompetition)}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch registrations");
       const json = await res.json();
       return json.registrations || [];
@@ -160,7 +169,12 @@ export function useToggleAttendanceMutation(eventId: any, isCompetition?: boolea
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { registrationId?: any; attended?: boolean; id?: any; patch?: any }) => {
+    mutationFn: async (payload: {
+      registrationId?: any;
+      attended?: boolean;
+      id?: any;
+      patch?: any;
+    }) => {
       const regId = payload.registrationId ?? payload.id;
       const att =
         payload.attended ??
@@ -196,9 +210,12 @@ export function useDeleteRegistrationMutation(eventId: any, isCompetition?: bool
 
   return useMutation({
     mutationFn: async (id: any) => {
-      const res = await fetch(`/api/events/${eventId}/registrations?registrationId=${id}&isCompetition=${Boolean(isCompetition)}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/events/${eventId}/registrations?registrationId=${id}&isCompetition=${Boolean(isCompetition)}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!res.ok) throw new Error("Failed to delete registration");
       return id;
     },

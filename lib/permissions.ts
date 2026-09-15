@@ -196,7 +196,11 @@ export function isAdmin(permInput: any): boolean {
   return hasPermission(permInput, "users");
 }
 
-export function hasPermission(permInput: any, pageKey: string, subKey: string | null = null): boolean {
+export function hasPermission(
+  permInput: any,
+  pageKey: string,
+  subKey: string | null = null,
+): boolean {
   if (!permInput) return false;
 
   const matrix: any = parsePermissions(permInput);

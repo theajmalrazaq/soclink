@@ -95,7 +95,9 @@ export const EventEmail = ({
           className="font-sans py-10 px-4"
           style={{ backgroundColor: cfg.backgroundColor || "#fafafa" }}
         >
-          <Preview>{isCompetition ? "New Competition" : "New Event"} - {eventTitle ?? "Event"}</Preview>
+          <Preview>
+            {isCompetition ? "New Competition" : "New Event"} - {eventTitle ?? "Event"}
+          </Preview>
           <Container className="mx-auto w-full max-w-[600px] p-0">
             {/* Card Container */}
             <Section
@@ -127,11 +129,13 @@ export const EventEmail = ({
                 )}
 
                 <Heading className="m-0 mb-2 font-serif font-bold text-2xl text-foreground tracking-tight text-left">
-                  {isCompetition ? "🏆 " : "🎯 "}{eventTitle}
+                  {isCompetition ? "🏆 " : "🎯 "}
+                  {eventTitle}
                 </Heading>
 
                 <Text className="m-0 mb-6 text-sm text-muted-foreground text-left">
-                  {isCompetition ? "Competition Announcement" : "Event Announcement"} - {cfg.brandName || "Society"}
+                  {isCompetition ? "Competition Announcement" : "Event Announcement"} -{" "}
+                  {cfg.brandName || "Society"}
                 </Text>
 
                 <Text className="text-base text-foreground leading-7 mb-6 text-left">
@@ -213,11 +217,15 @@ export const EventEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

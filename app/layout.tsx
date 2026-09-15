@@ -4,17 +4,14 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Socflow | Society & Event Management Dashboard",
-  description: "All-in-one command center for society leads, inductions, events, and communications.",
+  description:
+    "All-in-one command center for society leads, inductions, events, and communications.",
   icons: {
     icon: "/favicon.ico",
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head />

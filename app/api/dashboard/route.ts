@@ -1,6 +1,13 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import { db, events, eventsResponses, competitionsResponses, inductionResponses, members } from "@/lib/db";
+import {
+  db,
+  events,
+  eventsResponses,
+  competitionsResponses,
+  inductionResponses,
+  members,
+} from "@/lib/db";
 import { desc } from "drizzle-orm";
 
 export async function GET() {
@@ -40,9 +47,6 @@ export async function GET() {
     });
   } catch (err: any) {
     console.error("Dashboard API error:", err);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

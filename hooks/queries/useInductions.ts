@@ -24,7 +24,7 @@ export function useInductionsQuery({
     queryKey: [...INDUCTIONS_QUERY_KEY, { page, limit, status, team, search }],
     queryFn: async () => {
       const res = await fetch(
-        `/api/inductions?page=${page}&limit=${limit}&status=${status}&team=${team}&search=${encodeURIComponent(search)}`
+        `/api/inductions?page=${page}&limit=${limit}&status=${status}&team=${team}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch inductions");
       const json = await res.json();

@@ -33,10 +33,7 @@ export function useSocietyProfileQuery() {
       return {
         id: currentU?.id || null,
         name: cfg.brandName || user.user_metadata?.society_name || "",
-        username:
-          currentU?.society_username ||
-          user.user_metadata?.society_username ||
-          "",
+        username: currentU?.society_username || user.user_metadata?.society_username || "",
         email: user.email || cfg.supportEmail || "",
         adminName: currentU?.name || user.user_metadata?.name || user.email?.split("@")[0] || "",
         logoUrl: cfg.logoUrl || "",

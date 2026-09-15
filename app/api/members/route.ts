@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         (m) =>
           m.name?.toLowerCase().includes(search) ||
           m.roll_no?.toLowerCase().includes(search) ||
-          m.email?.toLowerCase().includes(search)
+          m.email?.toLowerCase().includes(search),
       );
     }
 

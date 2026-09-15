@@ -90,7 +90,9 @@ export const CertificateEmail = ({
           className="font-sans py-10 px-4"
           style={{ backgroundColor: cfg.backgroundColor || "#fafafa" }}
         >
-          <Preview>Your Certificate from {cfg.brandName || "Society"} - {eventName ?? "Event"}</Preview>
+          <Preview>
+            Your Certificate from {cfg.brandName || "Society"} - {eventName ?? "Event"}
+          </Preview>
           <Container className="mx-auto w-full max-w-[600px] p-0">
             {/* Card Container */}
             <Section
@@ -131,8 +133,9 @@ export const CertificateEmail = ({
 
                 <Text className="text-base text-foreground leading-7 mb-6 text-left">
                   We're thrilled to present you with your certificate of{" "}
-                  {position ? `${position} place in` : "participation for"} <strong>{eventName}</strong>{" "}
-                  held on {eventDate}. Your dedication and effort have been truly remarkable! 🌟
+                  {position ? `${position} place in` : "participation for"}{" "}
+                  <strong>{eventName}</strong> held on {eventDate}. Your dedication and effort have
+                  been truly remarkable! 🌟
                 </Text>
                 {hasAttachment && (
                   <div
@@ -181,8 +184,18 @@ export const CertificateEmail = ({
                     </Text>
 
                     {[
-                      { title: "LinkedIn", icon: "💼", desc: "Share with professionals", href: cfg.linkedinUrl },
-                      { title: "Instagram", icon: "📸", desc: "Show your achievement", href: cfg.instagramUrl },
+                      {
+                        title: "LinkedIn",
+                        icon: "💼",
+                        desc: "Share with professionals",
+                        href: cfg.linkedinUrl,
+                      },
+                      {
+                        title: "Instagram",
+                        icon: "📸",
+                        desc: "Show your achievement",
+                        href: cfg.instagramUrl,
+                      },
                     ]
                       .filter((item) => Boolean(item.href))
                       .map((item) => (
@@ -244,11 +257,15 @@ export const CertificateEmail = ({
                 )}
 
                 <Text className="text-xs text-muted-foreground m-0 leading-5 text-left">
-                  {cfg.footerDisclaimer || (cfg.brandName ? `This email was sent by ${cfg.brandName}.` : "This is an automated communication.")}
+                  {cfg.footerDisclaimer ||
+                    (cfg.brandName
+                      ? `This email was sent by ${cfg.brandName}.`
+                      : "This is an automated communication.")}
                 </Text>
 
                 <Text className="text-[11px] text-muted-foreground m-0 mt-3 text-left">
-                  {cfg.footerCopyright || `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
+                  {cfg.footerCopyright ||
+                    `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
 
                 {/* Powered by Socflow */}

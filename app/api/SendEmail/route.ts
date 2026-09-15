@@ -25,12 +25,10 @@ export async function POST(req: NextRequest) {
         });
       }
       if (typeof input === "string") {
-        return input
-          .split(/[;,]+/)
-          .flatMap((s) => {
-            const trimmed = s.trim();
-            return trimmed ? [trimmed] : [];
-          });
+        return input.split(/[;,]+/).flatMap((s) => {
+          const trimmed = s.trim();
+          return trimmed ? [trimmed] : [];
+        });
       }
       const trimmed = String(input).trim();
       return trimmed ? [trimmed] : [];
@@ -57,7 +55,7 @@ export async function POST(req: NextRequest) {
           message:
             "No SMTP credentials configured. Please configure your Gmail address and App Password in Settings > SMTP & Delivery or in environment variables.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -139,7 +137,7 @@ export async function POST(req: NextRequest) {
               error: err?.message || String(err),
             };
           }
-        })
+        }),
       );
       sendResults.push(...batchResults);
     }
@@ -158,7 +156,7 @@ export async function POST(req: NextRequest) {
     console.error("Email sending failed:", error);
     return NextResponse.json(
       { message: "Failed to send email", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

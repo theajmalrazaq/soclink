@@ -112,7 +112,6 @@ function ChartTooltipContent({
   nameKey,
   labelKey,
 }: any) {
-
   const { config } = useChart();
 
   const tooltipLabel = React.useMemo(() => {
@@ -236,7 +235,6 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: any) {
-
   const { config } = useChart();
 
   if (!payload?.length) {

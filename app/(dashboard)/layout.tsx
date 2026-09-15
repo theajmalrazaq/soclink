@@ -9,11 +9,7 @@ import Loading from "@/components/layout/Loading";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session, isLoading } = useUserSession();
 
@@ -29,15 +25,13 @@ export default function DashboardLayout({
 
   const contextValue = React.useMemo(
     () => ({ permissions, role, user: currentUser }),
-    [permissions, role, currentUser]
+    [permissions, role, currentUser],
   );
 
   return (
     <DashboardContext.Provider value={contextValue}>
       <Navbar access={permissions} user={currentUser}>
-        <Suspense fallback={<Loading />}>
-          {children}
-        </Suspense>
+        <Suspense fallback={<Loading />}>{children}</Suspense>
       </Navbar>
     </DashboardContext.Provider>
   );

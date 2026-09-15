@@ -231,7 +231,8 @@ function Leads() {
                           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
                             <Users className="w-3.5 h-3.5" />
                             <span>
-                              {lead.memberCount || 0} {lead.memberCount === 1 ? "member" : "members"}
+                              {lead.memberCount || 0}{" "}
+                              {lead.memberCount === 1 ? "member" : "members"}
                             </span>
                           </div>
                         </div>
@@ -244,7 +245,7 @@ function Leads() {
                             className="min-w-[105px] h-9 gap-1.5"
                             onClick={() =>
                               router.push(
-                                `/leads/details?id=${encodeURIComponent(lead.id)}&title=${encodeURIComponent(lead.title || "")}`
+                                `/leads/details?id=${encodeURIComponent(lead.id)}&title=${encodeURIComponent(lead.title || "")}`,
                               )
                             }
                           >
@@ -395,7 +396,8 @@ function Leads() {
                   <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete{" "}
-                    <strong className="text-foreground">{leadToDelete.title}</strong> and all associated members.
+                    <strong className="text-foreground">{leadToDelete.title}</strong> and all
+                    associated members.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

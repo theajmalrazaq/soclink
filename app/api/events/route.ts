@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         (ev) =>
           ev.title?.toLowerCase().includes(search) ||
           ev.speaker?.toLowerCase().includes(search) ||
-          ev.location?.toLowerCase().includes(search)
+          ev.location?.toLowerCase().includes(search),
       );
       total = allEventsList.length;
     }
