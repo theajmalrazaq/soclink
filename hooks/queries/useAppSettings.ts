@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -8,7 +9,7 @@ export function useAppSettingsQuery() {
     queryKey: APP_SETTINGS_QUERY_KEY,
     queryFn: async () => {
       try {
-        const res = await fetch("/api/settings");
+        const res = await apiFetch("/api/settings");
         if (!res.ok) throw new Error("Failed to fetch settings");
         const json = await res.json();
         return (
@@ -38,7 +39,7 @@ export function useUpdateAppSettingsMutation() {
 
   return useMutation({
     mutationFn: async (patch: any) => {
-      const res = await fetch("/api/settings", {
+      const res = await apiFetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),

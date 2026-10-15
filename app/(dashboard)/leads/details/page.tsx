@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -174,7 +175,7 @@ function LeadDetails() {
   const handleExportCSV = async (statusFilter?: string) => {
     setExporting(true);
     try {
-      const res = await fetch(`/api/leads/${lead_id}/members`);
+      const res = await apiFetch(`/api/leads/${lead_id}/members`);
       const json = await res.json();
       const dataToExport = json.members || [];
 
@@ -221,7 +222,7 @@ function LeadDetails() {
   const handleExportVCF = async (statusFilter?: string) => {
     setExporting(true);
     try {
-      const res = await fetch(`/api/leads/${lead_id}/members`);
+      const res = await apiFetch(`/api/leads/${lead_id}/members`);
       const json = await res.json();
       const dataToExport = json.members || [];
 

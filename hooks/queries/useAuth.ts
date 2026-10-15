@@ -1,37 +1,9 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
+import { saveEmailConfig } from "@/lib/emailConfig";
 
 export const USER_SESSION_QUERY_KEY = ["userSession"];
-const SESSION_CACHE_KEY = "socflow_cached_session";
-
-function getCachedSession() {
-  try {
-    if (typeof window === "undefined") return undefined;
-    const cached = localStorage.getItem(SESSION_CACHE_KEY);
-    if (!cached) return undefined;
-    const parsed = JSON.parse(cached);
-    if (parsed && parsed.isAuthenticated && parsed.user) {
-      return parsed;
-    }
-  } catch {
-    // Ignore JSON parsing errors
-  }
-  return undefined;
-}
-
-function setCachedSession(data: any) {
-  try {
-    if (typeof window === "undefined") return;
-    if (data && data.isAuthenticated) {
-      localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(data));
-    } else {
-      localStorage.removeItem(SESSION_CACHE_KEY);
-    }
-  } catch {
-    // Ignore storage errors
-  }
-}
 
 export function useUserSession() {
   return useQuery({
@@ -43,7 +15,6 @@ export function useUserSession() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        setCachedSession(null);
         return {
           user: null,
           role: null,
@@ -52,49 +23,43 @@ export function useUserSession() {
         };
       }
 
-      let userData: any = {
-        id: user.id,
-        name: user.user_metadata?.name || user.email?.split("@")[0] || "User",
-        email: user.email || "",
-        role: user.user_metadata?.role || "Member",
-      };
-
-      let permissions: any = null;
-
-      try {
-        const res = await fetch("/api/users");
-        if (res.ok) {
-          const json = await res.json();
-          const usersList = json.users || [];
-          const u = usersList.find(
-            (usr: any) =>
-              usr.email?.toLowerCase() === user.email?.toLowerCase() || usr.user_id === user.id,
-          );
-
-          if (u) {
-            const userRole = u.role || user.user_metadata?.role || "Member";
-            userData = {
-              id: u.id,
-              userId: u.user_id || user.id,
-              name: u.name || user.user_metadata?.name || user.email?.split("@")[0] || "User",
-              email: user.email || u.email || "",
-              role: userRole,
-            };
-            permissions = u.permissions || (userRole === "admin" ? DEFAULT_PERMISSIONS : null);
-          }
+      let res = await apiFetch("/api/me");
+      if (res.status === 403 && typeof window !== "undefined") {
+        const pending = localStorage.getItem("socflow_pending_setup");
+        let setup: any = null;
+        try { setup = pending ? JSON.parse(pending) : null; } catch { localStorage.removeItem("socflow_pending_setup"); }
+        if (!setup && user.user_metadata?.society_name) {
+          setup = {
+            name: user.user_metadata.name || user.user_metadata.society_name,
+            email: user.email,
+            config: { brandName: user.user_metadata.society_name, supportEmail: user.email },
+          };
         }
-      } catch (err) {
-        console.error("Error loading user profile in session query:", err);
+        if (setup && setup.email?.toLowerCase() === user.email?.toLowerCase()) {
+            const bootstrap = await apiFetch("/api/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: setup.name, email: setup.email }),
+            });
+            if (bootstrap.ok) {
+              try { await saveEmailConfig(setup.config); } catch (error) { console.warn("Could not save initial branding", error); }
+              localStorage.removeItem("socflow_pending_setup");
+              res = await apiFetch("/api/me");
+            }
+        }
       }
-
-      if (
-        !permissions &&
-        (userData.role === "admin" ||
-          user.user_metadata?.role === "admin" ||
-          user.user_metadata?.role === "custom")
-      ) {
-        permissions = DEFAULT_PERMISSIONS;
+      if (!res.ok) {
+        return { user: null, role: null, permissions: null, isAuthenticated: false };
       }
+      const { user: account } = await res.json();
+      const userData = {
+        id: account.id,
+        userId: account.userId || user.id,
+        name: account.name || user.email?.split("@")[0] || "User",
+        email: user.email || account.email || "",
+        role: account.role || "Member",
+      };
+      const permissions = account.permissions || account.role;
 
       const sessionResult = {
         user: userData,
@@ -103,7 +68,6 @@ export function useUserSession() {
         isAuthenticated: true,
       };
 
-      setCachedSession(sessionResult);
       return sessionResult;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -119,7 +83,6 @@ export function useLogoutMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      setCachedSession(null);
       queryClient.clear();
     },
   });

@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import React from "react";
 import { render } from "@react-email/render";
 import CertificateEmail from "@/emails/CertificateEmail";
@@ -8,7 +9,7 @@ import AnnouncementEmail from "@/emails/AnnouncementEmail";
 import EventEmail from "@/emails/EventEmail";
 import ContactEmail from "@/emails/ContactEmail";
 import InductionEmail from "@/emails/InductionEmail";
-import { getEmailConfig, getSmtpConfig } from "./emailConfig";
+import { getEmailConfig } from "./emailConfig";
 
 export const EMAIL_TEMPLATES: Record<string, any> = {
   announcement: AnnouncementEmail,
@@ -67,7 +68,7 @@ export async function sendEmail({
   const senderDisplayName =
     fromName || currentConfig.senderName || currentConfig.brandName || "Society Team";
 
-  const response = await fetch("/api/SendEmail", {
+  const response = await apiFetch("/api/SendEmail", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -78,7 +79,6 @@ export async function sendEmail({
       html,
       attachments,
       fromName: senderDisplayName,
-      smtpConfig: getSmtpConfig(),
     }),
   });
 

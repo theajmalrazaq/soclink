@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, competitionWinners } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const eventId = parseInt(params.id, 10);
   try {
     const winners = await db
@@ -17,6 +20,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const eventId = parseInt(params.id, 10);
   try {
     const body = await req.json();
@@ -32,6 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function DELETE(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const winnerId = parseInt(searchParams.get("winnerId") || "0", 10);
   try {

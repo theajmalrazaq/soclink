@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, events } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const id = parseInt(params.id, 10);
   try {
     const res = await db.select().from(events).where(eq(events.id, id));
@@ -15,6 +18,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const id = parseInt(params.id, 10);
   try {
     const body = await req.json();
@@ -27,6 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const id = parseInt(params.id, 10);
   try {
     await db.delete(events).where(eq(events.id, id));

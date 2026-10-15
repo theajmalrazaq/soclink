@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ export function useInductionsQuery({
   return useQuery({
     queryKey: [...INDUCTIONS_QUERY_KEY, { page, limit, status, team, search }],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/inductions?page=${page}&limit=${limit}&status=${status}&team=${team}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch inductions");
@@ -42,7 +43,7 @@ export function useInductionsStatsQuery() {
   return useQuery({
     queryKey: INDUCTIONS_STATS_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/inductions?stats=true");
+      const res = await apiFetch("/api/inductions?stats=true");
       if (!res.ok) throw new Error("Failed to fetch induction stats");
       const json = await res.json();
       return json.stats || { total: 0, selected: 0, rejected: 0, waiting: 0 };
@@ -57,7 +58,7 @@ export function useUpdateInductionStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: any; status: any }) => {
-      const res = await fetch("/api/inductions", {
+      const res = await apiFetch("/api/inductions", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status }),
@@ -85,7 +86,7 @@ export function useDeleteInductionMutation() {
 
   return useMutation({
     mutationFn: async (id: any) => {
-      const res = await fetch(`/api/inductions?id=${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/inductions?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete applicant");
       return id;
     },
@@ -106,7 +107,7 @@ export function useAddInductionMutation() {
 
   return useMutation({
     mutationFn: async (payload: any) => {
-      const res = await fetch("/api/inductions", {
+      const res = await apiFetch("/api/inductions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

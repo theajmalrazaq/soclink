@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, leadsData } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const leadId = parseInt(params.id, 10);
   try {
     const list = await db.select().from(leadsData).where(eq(leadsData.lead_id, leadId));
@@ -14,6 +17,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const leadId = parseInt(params.id, 10);
   try {
     const body = await req.json();
@@ -29,6 +34,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const { id, ...updates } = body;
@@ -41,6 +48,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const memberId = parseInt(searchParams.get("memberId") || "0", 10);
   try {

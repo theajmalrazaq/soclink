@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useCallback } from "react";
 
 export interface EmailConfig {
@@ -257,7 +258,7 @@ export function buildSocietyEmailConfig(soc: any = null, customSettings: any = {
 
 export async function fetchEmailConfigFromDB(): Promise<EmailConfig> {
   try {
-    const res = await fetch("/api/settings");
+    const res = await apiFetch("/api/settings?key=email_template_config");
     if (res.ok) {
       const data = await res.json();
       const settings = data?.settings;
@@ -305,17 +306,8 @@ export async function saveEmailConfig(newConfig: Partial<EmailConfig>): Promise<
     ...newConfig,
   };
 
-  activeDbConfig = merged;
-
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    } catch {}
-    window.dispatchEvent(new CustomEvent(CONFIG_EVENT, { detail: merged }));
-  }
-
   try {
-    await fetch("/api/settings", {
+    const response = await apiFetch("/api/settings?key=email_template_config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -323,8 +315,16 @@ export async function saveEmailConfig(newConfig: Partial<EmailConfig>): Promise<
         value: merged,
       }),
     });
+    if (!response.ok) throw new Error("Failed to save email settings");
   } catch (error) {
     console.warn("API app_settings error:", error);
+    throw error;
+  }
+
+  activeDbConfig = merged;
+  if (typeof window !== "undefined") {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
+    window.dispatchEvent(new CustomEvent(CONFIG_EVENT, { detail: merged }));
   }
 
   return merged;
@@ -341,13 +341,15 @@ export async function resetEmailConfig(): Promise<EmailConfig> {
   }
 
   try {
-    await fetch("/api/settings", {
+    const response = await apiFetch("/api/settings?key=email_template_config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: STORAGE_KEY, value: DEFAULT_EMAIL_CONFIG }),
     });
+    if (!response.ok) throw new Error("Failed to reset email settings");
   } catch (err) {
     console.warn("Reset email config API error:", err);
+    throw err;
   }
 
   return await fetchEmailConfigFromDB();
@@ -442,7 +444,7 @@ let activeSmtpConfig: SmtpConfig = { ...DEFAULT_SMTP_CONFIG };
 
 export async function fetchSmtpConfigFromDB(): Promise<SmtpConfig> {
   try {
-    const res = await fetch("/api/settings");
+    const res = await apiFetch("/api/settings?key=smtp_delivery_config");
     if (res.ok) {
       const data = await res.json();
       if (data?.settings?.value?.smtp) {
@@ -472,10 +474,8 @@ export async function saveSmtpConfig(newSmtp: Partial<SmtpConfig>): Promise<Smtp
     ...activeSmtpConfig,
     ...newSmtp,
   };
-  activeSmtpConfig = merged;
-
   try {
-    await fetch("/api/settings", {
+    const response = await apiFetch("/api/settings?key=smtp_delivery_config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -483,9 +483,13 @@ export async function saveSmtpConfig(newSmtp: Partial<SmtpConfig>): Promise<Smtp
         value: merged,
       }),
     });
+    if (!response.ok) throw new Error("Failed to save SMTP settings");
   } catch (error) {
     console.warn("Failed to save SMTP settings via API:", error);
+    throw error;
   }
+
+  activeSmtpConfig = merged;
 
   return merged;
 }

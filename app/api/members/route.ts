@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, members } from "@/lib/db";
 import { desc, eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "0", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -61,6 +64,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const res = await db.insert(members).values(body).returning();
@@ -73,6 +78,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const { id, ...updates } = body;
@@ -86,6 +93,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const id = parseInt(searchParams.get("id") || "0", 10);
   try {

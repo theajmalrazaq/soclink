@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ export function useEventsQuery({
   return useQuery({
     queryKey: [...EVENTS_QUERY_KEY, { page, limit, search, status }],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/events?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch events");
@@ -46,7 +47,7 @@ export function useAllEventsQuery() {
   return useQuery({
     queryKey: [...EVENTS_QUERY_KEY, "all"],
     queryFn: async () => {
-      const res = await fetch("/api/events?all=true");
+      const res = await apiFetch("/api/events?all=true");
       if (!res.ok) throw new Error("Failed to fetch all events");
       const json = await res.json();
       return json.events || [];
@@ -61,7 +62,7 @@ export function useEventDetailsQuery(eventId: any) {
     queryKey: EVENT_DETAILS_KEY(eventId),
     queryFn: async () => {
       if (!eventId) return null;
-      const res = await fetch(`/api/events/${eventId}`);
+      const res = await apiFetch(`/api/events/${eventId}`);
       if (!res.ok) throw new Error("Failed to fetch event details");
       const json = await res.json();
       return json.event;
@@ -77,7 +78,7 @@ export function useCreateEventMutation() {
 
   return useMutation({
     mutationFn: async (eventPayload: any) => {
-      const res = await fetch("/api/events", {
+      const res = await apiFetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventPayload),
@@ -103,7 +104,7 @@ export function useUpdateEventMutation(optionalEventId?: any) {
   return useMutation({
     mutationFn: async (patch: any) => {
       const targetId = patch?.id || optionalEventId;
-      const res = await fetch(`/api/events/${targetId}`, {
+      const res = await apiFetch(`/api/events/${targetId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -132,7 +133,7 @@ export function useDeleteEventMutation() {
 
   return useMutation({
     mutationFn: async (id: any) => {
-      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/events/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete event");
       return id;
     },
@@ -152,7 +153,7 @@ export function useEventRegistrationsQuery(eventId: any, isCompetition?: boolean
     queryKey: EVENT_REGISTRATIONS_KEY(eventId, isCompetition),
     queryFn: async () => {
       if (!eventId) return [];
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/events/${eventId}/registrations?isCompetition=${Boolean(isCompetition)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch registrations");
@@ -182,7 +183,7 @@ export function useToggleAttendanceMutation(eventId: any, isCompetition?: boolea
         payload.patch?.attendance ??
         payload.patch?.status ??
         false;
-      const res = await fetch(`/api/events/${eventId}/registrations`, {
+      const res = await apiFetch(`/api/events/${eventId}/registrations`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ registrationId: regId, attended: att, isCompetition }),
@@ -210,7 +211,7 @@ export function useDeleteRegistrationMutation(eventId: any, isCompetition?: bool
 
   return useMutation({
     mutationFn: async (id: any) => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/events/${eventId}/registrations?registrationId=${id}&isCompetition=${Boolean(isCompetition)}`,
         {
           method: "DELETE",
@@ -238,7 +239,7 @@ export function useCompetitionWinnersQuery(eventId: any) {
     queryKey: EVENT_WINNERS_KEY(eventId),
     queryFn: async () => {
       if (!eventId) return [];
-      const res = await fetch(`/api/events/${eventId}/winners`);
+      const res = await apiFetch(`/api/events/${eventId}/winners`);
       if (!res.ok) throw new Error("Failed to fetch winners");
       const json = await res.json();
       return json.winners || [];
@@ -254,7 +255,7 @@ export function useAddCompetitionWinnerMutation(eventId: any) {
 
   return useMutation({
     mutationFn: async (winnerPayload: any) => {
-      const res = await fetch(`/api/events/${eventId}/winners`, {
+      const res = await apiFetch(`/api/events/${eventId}/winners`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(winnerPayload),
@@ -279,7 +280,7 @@ export function useDeleteCompetitionWinnerMutation(eventId: any) {
 
   return useMutation({
     mutationFn: async (winnerId: any) => {
-      const res = await fetch(`/api/events/${eventId}/winners?winnerId=${winnerId}`, {
+      const res = await apiFetch(`/api/events/${eventId}/winners?winnerId=${winnerId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete winner");

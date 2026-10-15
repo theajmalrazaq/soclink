@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -28,7 +29,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 import { saveEmailConfig } from "@/lib/emailConfig";
 
 const COLOR_PRESETS = [
@@ -159,7 +159,6 @@ export default function Signup() {
             name: formData.adminName || formData.societyName,
             society_name: formData.societyName.trim(),
             society_username: formData.username.trim().toLowerCase(),
-            role: "admin",
           },
         },
       });
@@ -168,41 +167,38 @@ export default function Signup() {
 
       const userId = authData.user?.id;
 
-      // 2. Insert Admin User into `users` table via server API route
-      if (userId) {
-        try {
-          await fetch("/api/users", {
+      // A verified first account can initialize an empty installation.
+      const setup = {
+        name: formData.adminName.trim() || formData.societyName.trim(),
+        email: formData.email.trim(),
+        config: {
+          brandName: formData.societyName.trim(),
+          senderName: `${formData.societyName.trim()} Team`,
+          logoUrl: formData.logoUrl.trim(),
+          bannerUrl: formData.coverUrl.trim(),
+          primaryColor: formData.brandingColor,
+          instagramUrl: formData.instagramUrl.trim(),
+          linkedinUrl: formData.linkedinUrl.trim(),
+          supportEmail: formData.email.trim(),
+        },
+      };
+      if (userId && authData.session) {
+          const response = await apiFetch("/api/users", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              userId: userId,
-              user_id: userId,
-              email: formData.email.trim(),
-              name: formData.adminName.trim() || formData.societyName.trim(),
-              role: "admin",
-              permissionMatrix: DEFAULT_PERMISSIONS,
-              society_username: formData.username.trim().toLowerCase(),
+              name: setup.name,
+              email: setup.email,
             }),
           });
-        } catch (uErr) {
-          console.warn("Could not insert user record:", uErr);
-        }
+          if (!response.ok) throw new Error("This installation has already been set up");
+          await saveEmailConfig(setup.config);
+      } else {
+        localStorage.setItem("socflow_pending_setup", JSON.stringify(setup));
       }
 
-      // 3. Seed Email Template & Branding Config via API
-      await saveEmailConfig({
-        brandName: formData.societyName.trim(),
-        senderName: `${formData.societyName.trim()} Team`,
-        logoUrl: formData.logoUrl.trim(),
-        bannerUrl: formData.coverUrl.trim(),
-        primaryColor: formData.brandingColor,
-        instagramUrl: formData.instagramUrl.trim(),
-        linkedinUrl: formData.linkedinUrl.trim(),
-        supportEmail: formData.email.trim(),
-      });
-
-      toast.success("Society registered successfully! Welcome to your dashboard.");
-      router.push("/");
+      toast.success(authData.session ? "Society registered successfully" : "Confirm your email, then sign in to finish setup");
+      router.push(authData.session ? "/" : "/login");
     } catch (err: any) {
       console.error("Signup error:", err);
       toast.error(err.message || "Failed to register society. Please check your details.");

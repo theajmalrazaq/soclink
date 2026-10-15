@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -15,7 +16,7 @@ export function useLeadsQuery({ page = 0, limit = 10, search = "" }: LeadsQueryP
   return useQuery({
     queryKey: [...LEADS_QUERY_KEY, { page, limit, search }],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/leads?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch leads");
@@ -35,7 +36,7 @@ export function useCreateLeadMutation() {
 
   return useMutation({
     mutationFn: async (title: string) => {
-      const res = await fetch("/api/leads", {
+      const res = await apiFetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
@@ -60,7 +61,7 @@ export function useUpdateLeadMutation() {
 
   return useMutation({
     mutationFn: async ({ id, title }: { id: any; title: string | null }) => {
-      const res = await fetch("/api/leads", {
+      const res = await apiFetch("/api/leads", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, title }),
@@ -85,7 +86,7 @@ export function useDeleteLeadMutation() {
 
   return useMutation({
     mutationFn: async (id: any) => {
-      const res = await fetch(`/api/leads?id=${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/leads?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete lead category");
       return id;
     },
@@ -105,7 +106,7 @@ export function useLeadMembersQuery(leadId: any) {
     queryKey: LEAD_MEMBERS_KEY(leadId),
     queryFn: async () => {
       if (!leadId) return [];
-      const res = await fetch(`/api/leads/${leadId}/members`);
+      const res = await apiFetch(`/api/leads/${leadId}/members`);
       if (!res.ok) throw new Error("Failed to fetch lead members");
       const json = await res.json();
       return json.members || [];
@@ -121,7 +122,7 @@ export function useAddLeadMemberMutation(leadId: any) {
 
   return useMutation({
     mutationFn: async (memberPayload: any) => {
-      const res = await fetch(`/api/leads/${leadId}/members`, {
+      const res = await apiFetch(`/api/leads/${leadId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(memberPayload),
@@ -147,7 +148,7 @@ export function useUpdateLeadMemberMutation(leadId: any) {
 
   return useMutation({
     mutationFn: async ({ id, ...patch }: any) => {
-      const res = await fetch(`/api/leads/${leadId}/members`, {
+      const res = await apiFetch(`/api/leads/${leadId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ...patch }),
@@ -172,7 +173,7 @@ export function useDeleteLeadMemberMutation(leadId: any) {
 
   return useMutation({
     mutationFn: async (memberId: any) => {
-      const res = await fetch(`/api/leads/${leadId}/members?memberId=${memberId}`, {
+      const res = await apiFetch(`/api/leads/${leadId}/members?memberId=${memberId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete member");

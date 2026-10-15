@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useRouter } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
 import { useRef, useEffect } from "react";
@@ -185,7 +186,7 @@ function NewEvent() {
 
       if (sendEmail) {
         try {
-          const mRes = await fetch("/api/members?status=active&limit=1000");
+          const mRes = await apiFetch("/api/members?status=active&limit=1000");
           const mJson = await mRes.json();
           const membersList = mJson.data || [];
 

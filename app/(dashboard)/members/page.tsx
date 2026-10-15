@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -156,7 +157,7 @@ function Members() {
   const fetchFilteredResponses = async (type: string) => {
     let data: any[] = [];
     try {
-      const res = await fetch("/api/members?limit=10000");
+      const res = await apiFetch("/api/members?limit=10000");
       const json = await res.json();
       data = json.data || [];
     } catch (e) {

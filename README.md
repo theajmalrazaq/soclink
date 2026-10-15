@@ -27,9 +27,18 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:6543/postgres"
 # Supabase Auth configuration
 NEXT_PUBLIC_SUPABASE_URL="https://[YOUR-PROJECT].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
+
+# Optional: allow custom SMTP servers configured in Settings
+SMTP_ALLOWED_HOSTS="smtp.gmail.com,mail.example.org"
 ```
 
 ### 3. Database Management (Drizzle ORM)
+
+The first verified signup initializes the administrator account when the
+`users` table is empty. Later users must be created by an administrator.
+API requests require a Supabase access token and use the database permissions
+assigned to that account.
+
 ```bash
 # Push schema changes to database
 bun run db:push

@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -255,7 +256,7 @@ function EventDetails() {
     let data: any[] = [];
     try {
       const isComp = eventtype === "competitionsResponses";
-      const res = await fetch(`/api/events/${event_id}/registrations?isCompetition=${isComp}`);
+      const res = await apiFetch(`/api/events/${event_id}/registrations?isCompetition=${isComp}`);
       const json = await res.json();
       data = json.registrations || json.data || [];
     } catch {
@@ -405,7 +406,7 @@ function EventDetails() {
         let code: string;
         let existingCert: any = null;
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `/api/events/${event_id}/certifications?name=${encodeURIComponent(recipient.name)}`,
           );
           const json = await res.json();
@@ -417,7 +418,7 @@ function EventDetails() {
         } else {
           code = generateCode();
           try {
-            await fetch(`/api/events/${event_id}/certifications`, {
+            await apiFetch(`/api/events/${event_id}/certifications`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

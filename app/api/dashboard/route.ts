@@ -1,5 +1,6 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   db,
   events,
@@ -10,7 +11,9 @@ import {
 } from "@/lib/db";
 import { desc } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const [fetchEvents, evResponses, compResponses, inductions, membersList] = await Promise.all([
       db.select().from(events).orderBy(desc(events.id)).limit(10),

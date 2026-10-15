@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { getEmailConfig, fetchSmtpConfigFromDB, saveSmtpConfig } from "@/lib/emailConfig";
@@ -18,11 +19,10 @@ export function useSocietyProfileQuery() {
 
       let currentU: any = null;
       try {
-        const res = await fetch("/api/users");
+        const res = await apiFetch("/api/me");
         if (res.ok) {
           const json = await res.json();
-          const list = json.users || [];
-          currentU = list.find((u: any) => u.email === user.email || u.user_id === user.id);
+          currentU = json.user;
         }
       } catch (e) {
         console.warn("Could not fetch user record:", e);

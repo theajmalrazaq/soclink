@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -19,7 +20,7 @@ export function useEmailsQuery({
   return useQuery({
     queryKey: [...EMAILS_QUERY_KEY, { page, limit, status, search }],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/emails?page=${page}&limit=${limit}&status=${status}&search=${encodeURIComponent(search)}`,
       );
       if (!res.ok) throw new Error("Failed to fetch emails");
@@ -39,7 +40,7 @@ export function useUpdateEmailStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: number | string; status: any }) => {
-      const res = await fetch("/api/emails", {
+      const res = await apiFetch("/api/emails", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status }),
@@ -64,7 +65,7 @@ export function useDeleteEmailMutation() {
 
   return useMutation({
     mutationFn: async (id: number | string) => {
-      const res = await fetch(`/api/emails?id=${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/emails?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete email inquiry");
       return id;
     },

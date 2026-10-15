@@ -1,11 +1,16 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { db, app_settings } from "@/lib/db";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
-    const { to: rawTo, subject, html, attachments, fromName, smtpConfig } = body;
+    const { to: rawTo, subject, html, attachments, fromName } = body;
 
     if (!rawTo || !subject || !html) {
       return NextResponse.json({ message: "Missing fields" }, { status: 400 });
@@ -36,18 +41,36 @@ export async function POST(req: NextRequest) {
 
     const toList = normalizeList(rawTo);
 
-    const smtpHost = (smtpConfig?.host || process.env.SMTP_HOST || "smtp.gmail.com").trim();
-    const smtpPort = Number(smtpConfig?.port || process.env.SMTP_PORT || 465);
-    const isGmail =
-      smtpHost.includes("gmail") ||
-      (!smtpConfig?.host && process.env.SMTP_HOST?.includes("gmail")) ||
-      (!smtpConfig?.host && !process.env.SMTP_HOST);
-    const smtpSecure =
-      smtpPort === 465 ? true : Boolean(smtpConfig?.secure ?? process.env.SMTP_SECURE === "true");
-    const smtpUser = (smtpConfig?.user || smtpConfig?.email || process.env.SMTP_USER || "").trim();
-    const smtpPass = (smtpConfig?.pass || smtpConfig?.password || process.env.SMTP_PASS || "")
-      .trim()
-      .replace(/\s+/g, "");
+    // A request may supply message content, but never server resources or transport settings.
+    if (attachments !== undefined && (!Array.isArray(attachments) || attachments.length > 10)) {
+      return NextResponse.json({ message: "Invalid attachments" }, { status: 400 });
+    }
+    const safeAttachments: { filename: string; content: string; encoding: "base64" }[] = [];
+    for (const attachment of attachments || []) {
+      if (!attachment || typeof attachment !== "object" ||
+          Object.keys(attachment).some((key) => !["filename", "content", "encoding"].includes(key)) ||
+          typeof attachment.filename !== "string" || attachment.filename.length > 200 ||
+          typeof attachment.content !== "string" || attachment.content.length > 14_000_000 ||
+          attachment.encoding !== "base64" || !/^[A-Za-z0-9+/]*={0,2}$/.test(attachment.content)) {
+        return NextResponse.json({ message: "Invalid attachment" }, { status: 400 });
+      }
+      safeAttachments.push({ filename: attachment.filename, content: attachment.content, encoding: "base64" });
+    }
+
+    const rows = await db.select({ value: app_settings.value }).from(app_settings)
+      .where(eq(app_settings.key, "smtp_delivery_config")).limit(1);
+    const saved = rows[0]?.value && typeof rows[0].value === "object" ? rows[0].value as Record<string, unknown> : {};
+    const configured = saved.user && saved.pass ? saved : null;
+    const smtpHost = String(configured?.host || process.env.SMTP_HOST || "smtp.gmail.com").trim().toLowerCase();
+    const smtpPort = Number(configured?.port || process.env.SMTP_PORT || 465);
+    const smtpSecure = smtpPort === 465 ? true : Boolean(configured?.secure ?? process.env.SMTP_SECURE === "true");
+    const smtpUser = String(configured?.user || process.env.SMTP_USER || "").trim();
+    const smtpPass = String(configured?.pass || process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
+    const allowedHosts = new Set(["smtp.gmail.com", process.env.SMTP_HOST?.toLowerCase(),
+      ...(process.env.SMTP_ALLOWED_HOSTS || "").toLowerCase().split(",").map((host) => host.trim())]);
+    if (!allowedHosts.has(smtpHost) || !Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535) {
+      return NextResponse.json({ message: "SMTP host or port is not allowed" }, { status: 400 });
+    }
 
     if (!smtpUser || !smtpPass) {
       return NextResponse.json(
@@ -59,21 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const transportConfig: any = isGmail
-      ? {
-          service: "gmail",
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-          connectionTimeout: 15000,
-          greetingTimeout: 15000,
-          socketTimeout: 15000,
-        }
-      : {
+    const transportConfig: any = {
           host: smtpHost,
           port: smtpPort,
           secure: smtpSecure,
@@ -81,9 +90,9 @@ export async function POST(req: NextRequest) {
             user: smtpUser,
             pass: smtpPass,
           },
-          tls: {
-            rejectUnauthorized: false,
-          },
+          requireTLS: !smtpSecure,
+          disableFileAccess: true,
+          disableUrlAccess: true,
           connectionTimeout: 15000,
           greetingTimeout: 15000,
           socketTimeout: 15000,
@@ -92,7 +101,7 @@ export async function POST(req: NextRequest) {
     const transporter = nodemailer.createTransport(transportConfig);
 
     const senderDisplayName =
-      fromName || smtpConfig?.fromName || process.env.FROM_NAME || "Society Team";
+      fromName || configured?.fromName || process.env.FROM_NAME || "Society Team";
     const fromAddress = `"${senderDisplayName}" <${smtpUser}>`;
 
     const allRecipients = Array.from(new Set(toList));
@@ -119,7 +128,7 @@ export async function POST(req: NextRequest) {
             to: recipient,
             subject,
             html,
-            attachments,
+            attachments: safeAttachments,
           };
 
           try {

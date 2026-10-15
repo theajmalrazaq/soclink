@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useMemo } from "react";
 import {
   File,
@@ -277,7 +278,7 @@ function Inductions() {
   const fetchFilteredResponses = async (type: string) => {
     let data: any[] = [];
     try {
-      const res = await fetch("/api/inductions?limit=10000");
+      const res = await apiFetch("/api/inductions?limit=10000");
       const json = await res.json();
       data = json.data || [];
     } catch (e) {

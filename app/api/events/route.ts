@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, events, eventsResponses, competitionsResponses } from "@/lib/db";
 import { desc } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "0", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -51,6 +54,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const res = await db.insert(events).values(body).returning();

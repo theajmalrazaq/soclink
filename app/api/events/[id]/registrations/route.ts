@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, eventsResponses, competitionsResponses } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const eventId = parseInt(params.id, 10);
   const { searchParams } = new URL(req.url);
   const isCompetition = searchParams.get("isCompetition") === "true";
@@ -18,6 +21,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const { registrationId, attended, isCompetition } = body;
@@ -31,6 +36,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const registrationId = parseInt(searchParams.get("registrationId") || "0", 10);
   const isCompetition = searchParams.get("isCompetition") === "true";

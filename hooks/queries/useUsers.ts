@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { USER_SESSION_QUERY_KEY } from "./useAuth";
@@ -8,7 +9,7 @@ export function useUsersQuery() {
   return useQuery({
     queryKey: USERS_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/users");
+      const res = await apiFetch("/api/users");
       if (!res.ok) throw new Error("Failed to fetch users");
       const json = await res.json();
       return json.users || [];
@@ -23,7 +24,7 @@ export function useCreateUserMutation() {
 
   return useMutation({
     mutationFn: async ({ name, email, password, role, permissionMatrix }: any) => {
-      const res = await fetch("/api/users", {
+      const res = await apiFetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role, permissionMatrix }),
@@ -49,7 +50,7 @@ export function useUpdateUserMutation() {
 
   return useMutation({
     mutationFn: async ({ id, permissions, role }: any) => {
-      const res = await fetch("/api/users", {
+      const res = await apiFetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, permissions, role }),
@@ -75,7 +76,7 @@ export function useDeleteUserMutation() {
 
   return useMutation({
     mutationFn: async (user: any) => {
-      const res = await fetch(`/api/users?id=${user.id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/users?id=${user.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete user");
       return user;
     },

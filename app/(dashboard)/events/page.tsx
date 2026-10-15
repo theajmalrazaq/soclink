@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -306,7 +307,7 @@ function Events() {
 
       if (createSendEmail) {
         try {
-          const memRes = await fetch("/api/members?status=true");
+          const memRes = await apiFetch("/api/members?status=true");
           const memJson = await memRes.json();
           const membersList = memJson.data || [];
 
@@ -599,12 +600,9 @@ function Events() {
                         </div>
 
                         {event.description && (
-                          <p
-                            className="text-sm text-muted-foreground line-clamp-2 mt-3"
-                            dangerouslySetInnerHTML={{
-                              __html: event.description,
-                            }}
-                          />
+                          <p className="text-sm text-muted-foreground line-clamp-2 mt-3 whitespace-pre-line">
+                            {event.description}
+                          </p>
                         )}
 
                         {/* Action Buttons */}

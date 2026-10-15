@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/server/apiAuth";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { db, societies } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const list = await db.select().from(societies).limit(1);
     const society = list[0] || null;
@@ -15,6 +18,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await authorizeApiRequest(req);
+  if (access instanceof NextResponse) return access;
   try {
     const body = await req.json();
     const { id, ...data } = body;

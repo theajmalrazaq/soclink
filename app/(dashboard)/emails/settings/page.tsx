@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/apiFetch";
 import { useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -254,7 +255,7 @@ function EmailSettings() {
       // 1. Update/Upsert societies table in Supabase
       let socId = societyData.id;
       try {
-        const socRes = await fetch("/api/societies", {
+        const socRes = await apiFetch("/api/societies", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -319,6 +320,21 @@ function EmailSettings() {
     } catch (err) {
       console.error("Error resetting settings:", err);
       toast.error("Failed to reset settings");
+    }
+  };
+
+  const handleResetSociety = () => {
+    if (loadedProfile) {
+      setSocietyData(loadedProfile);
+      setFormData((prev) => buildSocietyEmailConfig(loadedProfile, prev));
+      toast.info("Profile changes discarded");
+    }
+  };
+
+  const handleResetSmtp = () => {
+    if (loadedSmtp) {
+      setSmtpData(loadedSmtp);
+      toast.info("SMTP changes discarded");
     }
   };
 
@@ -442,14 +458,14 @@ function EmailSettings() {
       {/* Top Setting Category Switcher & Action Buttons Bar */}
       <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         {/* Settings Navigation Tabs / Buttons */}
-        <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-muted/60 border border-border/60 overflow-x-auto max-w-full">
+        <div className="inline-flex items-center gap-2 overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setActiveSection("society_profile")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
               activeSection === "society_profile"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                ? "bg-background text-foreground shadow-xs border-border"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted border-border/40"
             }`}
           >
             <Building2 className="size-4 text-primary" />
@@ -459,10 +475,10 @@ function EmailSettings() {
           <button
             type="button"
             onClick={() => setActiveSection("email_templates")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
               activeSection === "email_templates"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                ? "bg-background text-foreground shadow-xs border-border"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted border-border/40"
             }`}
           >
             <Mail className="size-4 text-primary" />
@@ -472,10 +488,10 @@ function EmailSettings() {
           <button
             type="button"
             onClick={() => setActiveSection("smtp")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
               activeSection === "smtp"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                ? "bg-background text-foreground shadow-xs border-border"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted border-border/40"
             }`}
           >
             <Server className="size-4 text-primary" />
@@ -483,14 +499,44 @@ function EmailSettings() {
           </button>
         </div>
 
+        {/* Action Buttons for Society Profile */}
+        {activeSection === "society_profile" && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleResetSociety}
+              disabled={isSavingSociety || !loadedProfile}
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              <RotateCcw className="size-4 text-muted-foreground" />
+              Discard Changes
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSaveSociety}
+              disabled={isSavingSociety}
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer bg-primary text-primary-foreground shadow-sm"
+            >
+              {isSavingSociety ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Save className="size-4" />
+              )}
+              Save Profile
+            </Button>
+          </div>
+        )}
+
         {/* Action Buttons for Email Templates */}
         {activeSection === "email_templates" && (
           <div className="flex flex-wrap items-center gap-2.5">
             <Button
               variant="outline"
-              size="sm"
+              type="button"
               onClick={() => setResetDialogOpen(true)}
-              className="gap-1.5 cursor-pointer h-10"
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
             >
               <RotateCcw className="size-4 text-muted-foreground" />
               Reset Defaults
@@ -498,22 +544,67 @@ function EmailSettings() {
 
             <Button
               variant="outline"
-              size="sm"
+              type="button"
               onClick={() => setTestDialogOpen(true)}
-              className="gap-1.5 cursor-pointer h-10"
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
             >
               <Send className="size-4 text-blue-500" />
               Send Test Email
             </Button>
 
             <Button
-              size="sm"
+              type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="gap-1.5 cursor-pointer bg-primary text-primary-foreground shadow-sm h-10 px-4 font-semibold"
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer bg-primary text-primary-foreground shadow-sm"
             >
               {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               Save Changes
+            </Button>
+          </div>
+        )}
+
+        {/* Action Buttons for SMTP */}
+        {activeSection === "smtp" && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleResetSmtp}
+              disabled={isSavingSmtp || !loadedSmtp}
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              <RotateCcw className="size-4 text-muted-foreground" />
+              Discard Changes
+            </Button>
+
+            <Button
+              variant="outline"
+              type="button"
+              disabled={testingSmtp || !smtpData.user?.trim() || !smtpData.pass?.trim()}
+              onClick={handleTestSmtpConnection}
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              {testingSmtp ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4 text-blue-500" />
+              )}
+              Test Connection
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSaveSmtp}
+              disabled={isSavingSmtp}
+              className="h-10 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold cursor-pointer bg-primary text-primary-foreground shadow-sm"
+            >
+              {isSavingSmtp ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Save className="size-4" />
+              )}
+              Save Credentials
             </Button>
           </div>
         )}
@@ -739,20 +830,7 @@ function EmailSettings() {
                     </div>
                   </div>
 
-                  <div className="pt-3">
-                    <Button
-                      type="submit"
-                      disabled={isSavingSociety}
-                      className="w-full sm:w-auto gap-2 cursor-pointer font-semibold h-10 px-6 bg-primary text-primary-foreground shadow-sm"
-                    >
-                      {isSavingSociety ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Save className="size-4" />
-                      )}
-                      Save Society Profile & Sync Database
-                    </Button>
-                  </div>
+                  <button type="submit" className="hidden" tabIndex={-1} aria-hidden="true" />
                 </form>
               </CardContent>
             </Card>
@@ -1225,36 +1303,7 @@ function EmailSettings() {
                     />
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap items-center gap-3 pt-3">
-                    <Button
-                      type="submit"
-                      disabled={isSavingSmtp}
-                      className="gap-2 cursor-pointer font-semibold h-10 px-6 bg-primary text-primary-foreground shadow-sm"
-                    >
-                      {isSavingSmtp ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Save className="size-4" />
-                      )}
-                      Save SMTP Credentials
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={testingSmtp || !smtpData.user || !smtpData.pass}
-                      onClick={handleTestSmtpConnection}
-                      className="gap-2 cursor-pointer font-semibold h-10 px-4 border-primary/40 hover:bg-primary/5 text-primary"
-                    >
-                      {testingSmtp ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Send className="size-4 text-primary" />
-                      )}
-                      Test SMTP Connection
-                    </Button>
-                  </div>
+                  <button type="submit" className="hidden" tabIndex={-1} aria-hidden="true" />
                 </form>
               </CardContent>
             </Card>
