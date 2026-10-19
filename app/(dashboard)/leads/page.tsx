@@ -22,7 +22,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -36,7 +35,6 @@ import {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { canManageLeads, hasPermission } from "@/lib/permissions";
@@ -364,9 +362,6 @@ function Leads() {
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
                   <Button
                     onClick={handleUpdate}
                     disabled={updatingLeadId === selectedLead.id || !title.trim()}
@@ -401,7 +396,6 @@ function Leads() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteLead}
                     disabled={deletingId === leadToDelete.id}
@@ -449,9 +443,6 @@ function Leads() {
               </div>
 
               <DialogFooter className="gap-2 sm:gap-0">
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
                 <Button
                   onClick={handleCreateNewLead}
                   disabled={creatingLead || !newLeadTitle.trim()}
@@ -468,20 +459,6 @@ function Leads() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="text-foreground font-medium hover:underline ml-1"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </div>
         </motion.div>
       )}
     </>

@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useState, useEffect, useMemo } from "react";
 import {
   File,
@@ -91,15 +91,14 @@ import { useInductionStore } from "@/stores/useInductionStore";
 
 function Inductions() {
   const router = useRouter();
-  const navigateto = (path: string) => router.push(path);
   const outlet = useOutletContext();
   const access = outlet?.permissions;
 
   useEffect(() => {
     if (access && !canManageInductions(access)) {
-      navigateto("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigateto]);
+  }, [access, router]);
 
   const {
     searchTerm,
@@ -278,7 +277,7 @@ function Inductions() {
   const fetchFilteredResponses = async (type: string) => {
     let data: any[] = [];
     try {
-      const res = await apiFetch("/api/inductions?limit=10000");
+      const res = await apiRequests.inductionsForExport();
       const json = await res.json();
       data = json.data || [];
     } catch (e) {
@@ -668,7 +667,8 @@ function Inductions() {
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download =
       type === "selected"
         ? "selected_responses.csv"
@@ -680,6 +680,7 @@ function Inductions() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleExportVCF = async (type) => {
@@ -694,7 +695,8 @@ function Inductions() {
 
     const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download =
       type === "selected"
         ? "selected_contacts.vcf"
@@ -706,6 +708,7 @@ function Inductions() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleSendWhatsApp = (phone) => {
@@ -1399,7 +1402,6 @@ function Inductions() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteResponse}
                     className="bg-red-600 text-white hover:bg-red-700"
@@ -1412,19 +1414,6 @@ function Inductions() {
           </AlertDialog>
 
           {}
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="text-foreground font-medium hover:underline ml-1"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1641,13 +1630,6 @@ function Inductions() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsInterviewDialogOpen(false)}
-              disabled={sendingInterview}
-            >
-              Cancel
-            </Button>
             <Button onClick={handleSendInterview} disabled={sendingInterview}>
               {sendingInterview ? (
                 <div className="flex items-center">
@@ -1719,13 +1701,6 @@ function Inductions() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAnnouncementDialogOpen(false)}
-              disabled={sendingBulkInterview}
-            >
-              Cancel
-            </Button>
             <Button onClick={handleSendAnnouncementEmails} disabled={sendingBulkInterview}>
               {sendingBulkInterview ? (
                 <div className="flex items-center">
@@ -2036,20 +2011,20 @@ function Inductions() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsBulkInterviewDialogOpen(false);
-                // Reset after closing
-                setTimeout(() => {
-                  setBulkProgress({ current: 0, total: 0 });
-                  setBulkResults({ success: [], failed: [] });
-                }, 300);
-              }}
-              disabled={sendingBulkInterview}
-            >
-              {bulkProgress.total > 0 && !sendingBulkInterview ? "Close" : "Cancel"}
-            </Button>
+            {bulkProgress.total > 0 && !sendingBulkInterview && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsBulkInterviewDialogOpen(false);
+                  setTimeout(() => {
+                    setBulkProgress({ current: 0, total: 0 });
+                    setBulkResults({ success: [], failed: [] });
+                  }, 300);
+                }}
+              >
+                Close
+              </Button>
+            )}
             {(!bulkProgress.total || sendingBulkInterview) && (
               <Button
                 onClick={handleBulkScheduleInterview}

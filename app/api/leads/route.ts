@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
     const created = res[0];
     return NextResponse.json({ success: true, lead: created });
   } catch (err: any) {
+    console.error("POST /api/leads error:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

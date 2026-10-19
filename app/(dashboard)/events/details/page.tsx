@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -44,7 +44,6 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -256,7 +255,7 @@ function EventDetails() {
     let data: any[] = [];
     try {
       const isComp = eventtype === "competitionsResponses";
-      const res = await apiFetch(`/api/events/${event_id}/registrations?isCompetition=${isComp}`);
+      const res = await apiRequests.eventRegistrations(event_id, isComp);
       const json = await res.json();
       data = json.registrations || json.data || [];
     } catch {
@@ -406,9 +405,7 @@ function EventDetails() {
         let code: string;
         let existingCert: any = null;
         try {
-          const res = await apiFetch(
-            `/api/events/${event_id}/certifications?name=${encodeURIComponent(recipient.name)}`,
-          );
+          const res = await apiRequests.certificate(event_id, recipient.name);
           const json = await res.json();
           existingCert = json.certificate;
         } catch {}
@@ -418,14 +415,7 @@ function EventDetails() {
         } else {
           code = generateCode();
           try {
-            await apiFetch(`/api/events/${event_id}/certifications`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: recipient.name,
-                code: code,
-              }),
-            });
+            await apiRequests.createCertificate(event_id, { name: recipient.name, code });
           } catch (e) {
             console.error("Error inserting certificate:", e);
           }
@@ -1096,6 +1086,7 @@ function EventDetails() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    aria-label={`Remove winner in position ${winner.position}`}
                                     className="h-8 w-8 text-muted-foreground hover:text-red-600"
                                     onClick={() => removeWinner(winner.id)}
                                   >
@@ -1156,7 +1147,6 @@ function EventDetails() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={deleteResponse}
                 disabled={deletingId === responseToDelete?.id}
@@ -1266,17 +1256,6 @@ function EventDetails() {
                 )}
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsWinnerDialogOpen(false);
-                    setSelectedWinner(null);
-                    setWinnerPosition(null);
-                    setWinnerImageUrl("");
-                  }}
-                >
-                  Cancel
-                </Button>
                 <Button onClick={addWinner} disabled={!selectedWinner || !winnerPosition}>
                   <Trophy className="h-4 w-4 mr-2" />
                   Add Winner

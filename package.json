@@ -19,7 +19,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:pull": "drizzle-kit introspect"
+    "db:pull": "drizzle-kit introspect",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -97,6 +98,7 @@
     "drizzle-kit": "^0.31.10",
     "oxlint": "^1.2.0",
     "postcss": "^8.4.40",
+    "react-doctor": "^0.9.18",
     "react-email": "5.0.4",
     "shadcn": "^3.5.0",
     "tailwind-scrollbar": "^3.1.0",

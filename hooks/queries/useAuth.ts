@@ -42,7 +42,7 @@ export function useUserSession() {
               body: JSON.stringify({ name: setup.name, email: setup.email }),
             });
             if (bootstrap.ok) {
-              try { await saveEmailConfig(setup.config); } catch (error) { console.warn("Could not save initial branding", error); }
+              try { await saveEmailConfig(setup.config, true); } catch (error) { console.warn("Could not save initial branding", error); }
               localStorage.removeItem("socflow_pending_setup");
               res = await apiFetch("/api/me");
             }

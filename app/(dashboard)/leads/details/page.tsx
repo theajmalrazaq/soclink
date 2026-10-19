@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -42,7 +42,6 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -56,7 +55,6 @@ import {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { canManageLeads, hasPermission } from "@/lib/permissions";
 import {
@@ -175,7 +173,7 @@ function LeadDetails() {
   const handleExportCSV = async (statusFilter?: string) => {
     setExporting(true);
     try {
-      const res = await apiFetch(`/api/leads/${lead_id}/members`);
+      const res = await apiRequests.leadMembers(lead_id);
       const json = await res.json();
       const dataToExport = json.members || [];
 
@@ -207,11 +205,13 @@ function LeadDetails() {
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
       link.download = `${lead_title}_${statusFilter || "all"}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
     } catch {
       toast.error("Failed to export CSV.");
     } finally {
@@ -222,7 +222,7 @@ function LeadDetails() {
   const handleExportVCF = async (statusFilter?: string) => {
     setExporting(true);
     try {
-      const res = await apiFetch(`/api/leads/${lead_id}/members`);
+      const res = await apiRequests.leadMembers(lead_id);
       const json = await res.json();
       const dataToExport = json.members || [];
 
@@ -245,11 +245,13 @@ function LeadDetails() {
 
       const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
       link.download = `${lead_title}_${statusFilter || "all"}.vcf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
     } catch {
       toast.error("Failed to export VCF.");
     } finally {
@@ -677,9 +679,6 @@ function LeadDetails() {
               </div>
 
               <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
-                </DialogClose>
                 <Button
                   onClick={handleCreateNewLead}
                   disabled={creatingMember}
@@ -746,9 +745,6 @@ function LeadDetails() {
               </div>
 
               <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
-                </DialogClose>
                 <Button
                   onClick={handleUpdateLead}
                   disabled={updatingMember}
@@ -781,7 +777,6 @@ function LeadDetails() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteLead}
                     disabled={deletingId === leadToDelete?.id}
@@ -800,20 +795,6 @@ function LeadDetails() {
               </AlertDialogContent>
             )}
           </AlertDialog>
-
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="text-foreground font-medium hover:underline ml-1"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </div>
         </motion.div>
       )}
     </>

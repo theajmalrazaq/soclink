@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792076630330,
+      "tag": "0000_cleanup_deleted_auth_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792077539993,
+      "tag": "0001_remove_legacy_auth_signup_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792079827213,
+      "tag": "0002_fix_lead_category_ids",
+      "breakpoints": true
+    }
+  ]
+}

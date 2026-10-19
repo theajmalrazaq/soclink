@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Eye,
   Check,
-  Heart,
   Filter,
   ChevronDown,
   Hourglass,
@@ -76,9 +75,9 @@ function Emails() {
 
   useEffect(() => {
     if (access && !canManageEmails(access)) {
-      navigateto("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigateto]);
+  }, [access, router]);
 
   const {
     searchTerm,
@@ -168,7 +167,7 @@ function Emails() {
   const fetchFilteredResponses = async (type: string) => {
     let data: any[] = [];
     try {
-      const res = await apiFetch("/api/emails?limit=10000");
+      const res = await apiRequests.emailsForExport();
       const json = await res.json();
       data = json.data || [];
     } catch (e) {
@@ -211,11 +210,13 @@ function Emails() {
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `contact_responses_${type || "all"}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleExportVCF = async (type: string) => {
@@ -230,11 +231,13 @@ function Emails() {
 
     const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `contact_responses_${type || "all"}.vcf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleSendReply = async () => {
@@ -824,15 +827,6 @@ function Emails() {
                 </div>
 
                 <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      resetReplyModal();
-                    }}
-                    disabled={sendingReply}
-                  >
-                    Cancel
-                  </Button>
                   <Button onClick={handleSendReply} disabled={sendingReply || !replyMessage.trim()}>
                     {sendingReply ? (
                       <>Sending...</>
@@ -866,7 +860,6 @@ function Emails() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteResponse}
                     className="bg-destructive text-white hover:bg-destructive/90"
@@ -878,14 +871,6 @@ function Emails() {
             )}
           </AlertDialog>
 
-          {}
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Designed & Built with{" "}
-              <Heart className="w-3.5 h-3.5 mx-1 text-red-500 fill-red-500 inline" /> for
-              <span className="text-primary font-semibold ml-1">Socflow</span>
-            </div>
-          </div>
         </div>
       )}
     </>

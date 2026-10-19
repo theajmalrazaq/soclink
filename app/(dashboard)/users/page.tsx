@@ -40,7 +40,6 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -228,8 +227,9 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
             >
               {/* Module Header */}
               <div className="px-3 py-2.5 flex items-center justify-between gap-3 select-none bg-muted/20">
-                <div
-                  className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                <button
+                  type="button"
+                  className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer text-left"
                   onClick={() => toggleExpandSection(config.key)}
                 >
                   <div
@@ -263,7 +263,7 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
                         : "Access disabled"}
                     </p>
                   </div>
-                </div>
+                </button>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Switch
@@ -340,7 +340,6 @@ import { useUserStore } from "@/stores/useUserStore";
 
 function Users() {
   const router = useRouter();
-  const navigate = (path: string) => router.push(path);
   const outlet = useOutletContext();
   const access = outlet?.permissions;
 
@@ -386,9 +385,9 @@ function Users() {
   // Redirect users without user management permission
   useEffect(() => {
     if (access && !canManageUsers(access)) {
-      navigate("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigate]);
+  }, [access, router]);
 
   // Master page toggle
   const togglePageMaster = (matrixSetter, pageKey, enabled) => {
@@ -806,14 +805,6 @@ function Users() {
             <DialogFooter className="pt-3 gap-2 border-t border-border/40 mt-auto">
               {createStep === 1 ? (
                 <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 text-xs"
-                    onClick={() => setIsCreateOpen(false)}
-                  >
-                    Cancel
-                  </Button>
                   <Button type="button" className="h-9 text-xs gap-1.5" onClick={handleNextStep}>
                     Continue to Permissions <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
@@ -889,9 +880,6 @@ function Users() {
           )}
 
           <DialogFooter className="pt-3 gap-2 border-t border-border/40 mt-auto">
-            <Button variant="outline" className="h-9 text-xs" onClick={() => setEditingUser(null)}>
-              Cancel
-            </Button>
             <Button
               onClick={handleUpdateUserPermissions}
               disabled={updating}
@@ -927,7 +915,6 @@ function Users() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel className="h-11">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
               disabled={deleting}

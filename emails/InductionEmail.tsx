@@ -194,17 +194,6 @@ export const InductionEmail = ({ name, deadline, config = {} }: InductionEmailPr
                   {cfg.footerCopyright ||
                     `© ${new Date().getFullYear()} ${cfg.brandName || "Society"}. All rights reserved.`}
                 </Text>
-
-                {/* Powered by Socflow */}
-                <Text className="text-[11px] text-muted-foreground mt-4 pt-3 border-t border-border text-left">
-                  Powered by{" "}
-                  <Link
-                    href="https://socflow.app"
-                    className="text-foreground font-semibold underline"
-                  >
-                    Socflow
-                  </Link>
-                </Text>
               </Section>
             </Section>
           </Container>

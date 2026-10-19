@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -30,6 +30,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { saveEmailConfig } from "@/lib/emailConfig";
+import { socialProfileUrl } from "@/lib/socialProfiles";
+import { queryClient } from "@/lib/queryClient";
+import { USER_SESSION_QUERY_KEY } from "@/hooks/queries/useAuth";
 
 const COLOR_PRESETS = [
   { name: "Socflow Blue", color: "#2A43F8" },
@@ -150,6 +153,9 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      const instagramUrl = socialProfileUrl(formData.instagramUrl, "instagram");
+      const linkedinUrl = socialProfileUrl(formData.linkedinUrl, "linkedin");
+
       // 1. Sign up user via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email.trim(),
@@ -177,27 +183,33 @@ export default function Signup() {
           logoUrl: formData.logoUrl.trim(),
           bannerUrl: formData.coverUrl.trim(),
           primaryColor: formData.brandingColor,
-          instagramUrl: formData.instagramUrl.trim(),
-          linkedinUrl: formData.linkedinUrl.trim(),
+          instagramUrl,
+          linkedinUrl,
           supportEmail: formData.email.trim(),
         },
       };
       if (userId && authData.session) {
-          const response = await apiFetch("/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: setup.name,
-              email: setup.email,
-            }),
-          });
-          if (!response.ok) throw new Error("This installation has already been set up");
-          await saveEmailConfig(setup.config);
+        const response = await apiRequests.createUser({
+          name: setup.name,
+          email: setup.email,
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => null);
+          throw new Error(result?.error || "Could not complete registration");
+        }
+        await saveEmailConfig(setup.config, true);
       } else {
         localStorage.setItem("socflow_pending_setup", JSON.stringify(setup));
       }
 
-      toast.success(authData.session ? "Society registered successfully" : "Confirm your email, then sign in to finish setup");
+      toast.success(
+        authData.session
+          ? "Society registered successfully"
+          : "Confirm your email, then sign in to finish setup",
+      );
+      if (authData.session) {
+        await queryClient.invalidateQueries({ queryKey: USER_SESSION_QUERY_KEY });
+      }
       router.push(authData.session ? "/" : "/login");
     } catch (err: any) {
       console.error("Signup error:", err);
@@ -265,14 +277,10 @@ export default function Signup() {
 
           <CardContent className="p-6 sm:p-8">
             <form
-              onSubmit={
-                step === 3
-                  ? handleSubmit
-                  : (e) => {
-                      e.preventDefault();
-                      handleNext();
-                    }
-              }
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (step < 3) handleNext();
+              }}
             >
               {step === 1 && (
                 <div className="space-y-4 text-left animate-in fade-in duration-200">
@@ -657,11 +665,11 @@ export default function Signup() {
                       className="text-xs font-semibold flex items-center gap-1.5"
                     >
                       <Instagram className="size-3.5 text-pink-500" />
-                      Instagram Profile URL (Optional)
+                      Instagram username (Optional)
                     </Label>
                     <Input
                       id="instagramUrl"
-                      placeholder="https://instagram.com/your_handle"
+                      placeholder="your_handle"
                       value={formData.instagramUrl}
                       onChange={(e) => handleChange("instagramUrl", e.target.value)}
                       className="h-10 text-xs"
@@ -674,11 +682,11 @@ export default function Signup() {
                       className="text-xs font-semibold flex items-center gap-1.5"
                     >
                       <Linkedin className="size-3.5 text-blue-600" />
-                      LinkedIn Page URL (Optional)
+                      LinkedIn page username (Optional)
                     </Label>
                     <Input
                       id="linkedinUrl"
-                      placeholder="https://linkedin.com/company/your-society"
+                      placeholder="your-society"
                       value={formData.linkedinUrl}
                       onChange={(e) => handleChange("linkedinUrl", e.target.value)}
                       className="h-10 text-xs"
@@ -720,7 +728,8 @@ export default function Signup() {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={() => handleSubmit()}
                     disabled={loading}
                     className="gap-2 cursor-pointer ml-auto h-10 px-6 font-semibold bg-primary text-primary-foreground shadow-md"
                   >

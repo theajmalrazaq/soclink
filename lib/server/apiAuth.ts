@@ -1,7 +1,7 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { db, users } from "@/lib/db";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { hasPermission } from "@/lib/permissions";
 
 type AccessRule = [string, string?];
@@ -13,36 +13,90 @@ function ruleFor(path: string, method: string): AccessRule | null {
   if (path === "/api/settings") {
     return method === "GET" || method === "POST" ? ["settings"] : null;
   }
-  if (path === "/api/societies") return method === "GET" ? ["emails"] : ["emails", "manageSettings"];
+  if (path === "/api/societies")
+    return method === "GET" ? ["emails"] : ["emails", "manageSettings"];
   if (path === "/api/users") {
-    return { GET: ["users"], POST: ["users", "createUser"], PATCH: ["users", "editRole"], DELETE: ["users", "deleteUser"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["users"],
+        POST: ["users", "createUser"],
+        PATCH: ["users", "editRole"],
+        DELETE: ["users", "deleteUser"],
+      }[method] as AccessRule) || null
+    );
   }
   if (path === "/api/emails") {
-    return { GET: ["emails", "viewResponses"], PATCH: ["emails", "changeStatus"], DELETE: ["emails", "deleteEmail"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["emails", "viewResponses"],
+        PATCH: ["emails", "changeStatus"],
+        DELETE: ["emails", "deleteEmail"],
+      }[method] as AccessRule) || null
+    );
   }
   if (path === "/api/members") {
-    return { GET: ["members", "readOnly"], POST: ["members"], PATCH: ["members", "changeStatus"], DELETE: ["members", "deleteMember"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["members", "readOnly"],
+        POST: ["members"],
+        PATCH: ["members", "changeStatus"],
+        DELETE: ["members", "deleteMember"],
+      }[method] as AccessRule) || null
+    );
   }
   if (path === "/api/inductions") {
-    return { GET: ["inductions", "readOnly"], POST: ["inductions"], PATCH: ["inductions", "changeStatus"], DELETE: ["inductions", "deleteResponse"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["inductions", "readOnly"],
+        POST: ["inductions"],
+        PATCH: ["inductions", "changeStatus"],
+        DELETE: ["inductions", "deleteResponse"],
+      }[method] as AccessRule) || null
+    );
   }
   if (path === "/api/leads") {
-    return { GET: ["leads", "readOnly"], POST: ["leads", "addMember"], PATCH: ["leads", "changeStatus"], DELETE: ["leads", "deleteLead"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["leads", "readOnly"],
+        POST: ["leads", "addMember"],
+        PATCH: ["leads", "changeStatus"],
+        DELETE: ["leads", "deleteLead"],
+      }[method] as AccessRule) || null
+    );
   }
   if (/^\/api\/leads\/[^/]+\/members$/.test(path)) {
-    return { GET: ["leads", "readOnly"], POST: ["leads", "addMember"], PATCH: ["leads", "changeStatus"], DELETE: ["leads", "deleteLead"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["leads", "readOnly"],
+        POST: ["leads", "addMember"],
+        PATCH: ["leads", "changeStatus"],
+        DELETE: ["leads", "deleteLead"],
+      }[method] as AccessRule) || null
+    );
   }
   if (path === "/api/events") {
-    return { GET: ["events"], POST: ["events", "createEvent"] }[method] as AccessRule || null;
+    return ({ GET: ["events"], POST: ["events", "createEvent"] }[method] as AccessRule) || null;
   }
   if (/^\/api\/events\/[^/]+$/.test(path)) {
-    return { GET: ["events"], PATCH: ["events", "editEvent"], DELETE: ["events", "deleteEvent"] }[method] as AccessRule || null;
+    return (
+      ({ GET: ["events"], PATCH: ["events", "editEvent"], DELETE: ["events", "deleteEvent"] }[
+        method
+      ] as AccessRule) || null
+    );
   }
   if (/^\/api\/events\/[^/]+\/registrations$/.test(path)) {
-    return { GET: ["events", "viewRegistrations"], PATCH: ["events", "editEvent"], DELETE: ["events", "deleteEvent"] }[method] as AccessRule || null;
+    return (
+      ({
+        GET: ["events", "viewRegistrations"],
+        PATCH: ["events", "editEvent"],
+        DELETE: ["events", "deleteEvent"],
+      }[method] as AccessRule) || null
+    );
   }
-  if (/^\/api\/events\/[^/]+\/winners$/.test(path)) return ["events", method === "GET" ? "viewRegistrations" : "selectWinners"];
-  if (/^\/api\/events\/[^/]+\/certifications$/.test(path)) return ["events", method === "GET" ? "viewRegistrations" : "generateCertificates"];
+  if (/^\/api\/events\/[^/]+\/winners$/.test(path))
+    return ["events", method === "GET" ? "viewRegistrations" : "selectWinners"];
+  if (/^\/api\/events\/[^/]+\/certifications$/.test(path))
+    return ["events", method === "GET" ? "viewRegistrations" : "generateCertificates"];
   return null;
 }
 
@@ -52,7 +106,8 @@ export async function authorizeApiRequest(req: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return NextResponse.json({ error: "Authentication unavailable" }, { status: 503 });
+  if (!url || !key)
+    return NextResponse.json({ error: "Authentication unavailable" }, { status: 503 });
 
   const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await auth.auth.getUser(token);
@@ -65,10 +120,7 @@ export async function authorizeApiRequest(req: NextRequest) {
   const rule = ruleFor(path, req.method);
   if (!rule) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const records = await db.select().from(users).where(or(
-    eq(users.user_id, user.id),
-    and(isNull(users.user_id), eq(users.email, user.email)),
-  )).limit(1);
+  const records = await db.select().from(users).where(eq(users.user_id, user.id)).limit(1);
   const account = records[0];
 
   // A verified first signup may initialize an empty installation once.
@@ -88,9 +140,14 @@ export async function authorizeApiRequest(req: NextRequest) {
   if (path === "/api/settings") {
     allowed = settingKey
       ? hasPermission(permissions, "emails", "manageSettings")
-      : hasPermission(permissions, "dashboard", req.method === "POST" ? "quickSettings" : "viewStats");
+      : hasPermission(
+          permissions,
+          "dashboard",
+          req.method === "POST" ? "quickSettings" : "viewStats",
+        );
   } else if (path === "/api/SendEmail") {
-    allowed = hasPermission(permissions, "emails", "sendEmail") ||
+    allowed =
+      hasPermission(permissions, "emails", "sendEmail") ||
       hasPermission(permissions, "inductions", "sendEmails") ||
       hasPermission(permissions, "events", "createEvent") ||
       hasPermission(permissions, "events", "generateCertificates");

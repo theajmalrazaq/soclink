@@ -2,6 +2,8 @@
 
 Socflow is an open-source, database-driven society management and email operations platform designed for student chapters, clubs, and community organizations.
 
+For website integrations and the complete HTTP endpoint reference, see [CRM API documentation](docs/API.md).
+
 ## ✨ Key Features
 - **BYO SMTP Engine**: Send transactional and bulk emails directly using your Gmail App Passwords or custom SMTP configurations.
 - **Dynamic Email Suite**: 8 fully customizable email templates (Announcements, Inductions, Interviews, Certificates, Selections, Rejections, Events, and Contact Responses) synchronized with Postgres DB.
@@ -38,6 +40,15 @@ The first verified signup initializes the administrator account when the
 `users` table is empty. Later users must be created by an administrator.
 API requests require a Supabase access token and use the database permissions
 assigned to that account.
+
+Run `bun run db:migrate` before deleting users. The auth deletion migration
+removes the matching app account when a user is deleted in Supabase or in the
+app. Because events, members, and settings are shared across the installation,
+they are cleared only when the last Auth-backed app account is deleted. A new
+signup can then initialize a fresh installation. Deleting one of several users
+keeps shared data for the remaining accounts.
+The migrations also remove the old `on_auth_user_created` trigger, which created
+a restricted app account before the first signup could initialize the admin.
 
 ```bash
 # Push schema changes to database

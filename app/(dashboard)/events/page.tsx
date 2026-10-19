@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -49,7 +49,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -63,7 +62,6 @@ import {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { canViewRegistrations, hasPermission } from "@/lib/permissions";
 import {
@@ -307,7 +305,7 @@ function Events() {
 
       if (createSendEmail) {
         try {
-          const memRes = await apiFetch("/api/members?status=true");
+          const memRes = await apiRequests.membersForAnnouncement();
           const memJson = await memRes.json();
           const membersList = memJson.data || [];
 
@@ -875,9 +873,6 @@ function Events() {
                 </div>
 
                 <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="ghost">Cancel</Button>
-                  </DialogClose>
                   <Button
                     onClick={handleUpdate}
                     disabled={updatingEventId === selectedEvent.id}
@@ -910,7 +905,6 @@ function Events() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteEvent}
                     disabled={deletingId === eventToDelete.id}
@@ -1377,9 +1371,6 @@ function Events() {
 
               <DialogFooter className="flex flex-col-reverse sm:flex-row justify-between items-center gap-2 pt-3 border-t border-border/40">
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <Button variant="outline" type="button" onClick={() => setIsCreateOpen(false)}>
-                    Cancel
-                  </Button>
                   {createStep > 1 && (
                     <Button
                       variant="secondary"
@@ -1414,20 +1405,6 @@ function Events() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="text-foreground font-medium hover:underline ml-1"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </div>
         </motion.div>
       )}
     </>

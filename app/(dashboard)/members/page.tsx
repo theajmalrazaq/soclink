@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -57,15 +57,14 @@ import { useMemberStore } from "@/stores/useMemberStore";
 
 function Members() {
   const router = useRouter();
-  const navigateto = (path: string) => router.push(path);
   const outlet = useOutletContext();
   const access = outlet?.permissions;
 
   useEffect(() => {
     if (access && !canManageMembers(access)) {
-      navigateto("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigateto]);
+  }, [access, router]);
 
   const {
     searchTerm,
@@ -157,7 +156,7 @@ function Members() {
   const fetchFilteredResponses = async (type: string) => {
     let data: any[] = [];
     try {
-      const res = await apiFetch("/api/members?limit=10000");
+      const res = await apiRequests.membersForExport();
       const json = await res.json();
       data = json.data || [];
     } catch (e) {
@@ -197,11 +196,13 @@ function Members() {
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `members_${type || "all"}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleExportVCF = async (type) => {
@@ -216,11 +217,13 @@ function Members() {
 
     const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `members_${type || "all"}.vcf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   };
 
   const handleSendEmail = (email) => {
@@ -760,7 +763,6 @@ function Members() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={deleteResponse}
                     disabled={deletingId === responseToDelete?.id}
@@ -781,19 +783,6 @@ function Members() {
           </AlertDialog>
 
           {}
-          <div className="w-full mt-12 text-center">
-            <div className="flex items-center justify-center text-xs text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="text-foreground font-medium hover:underline ml-1"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </div>
         </div>
       )}
     </>

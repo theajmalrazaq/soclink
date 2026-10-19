@@ -1,5 +1,5 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
 import { useRouter } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
 import { useRef, useEffect } from "react";
@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import {
@@ -61,9 +60,9 @@ function NewEvent() {
 
   useEffect(() => {
     if (access && !canManageEvents(access) && !hasPermission(access, "events", "createEvent")) {
-      navigateto("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigateto]);
+  }, [access, router]);
 
   const {
     eventForm,
@@ -186,7 +185,7 @@ function NewEvent() {
 
       if (sendEmail) {
         try {
-          const mRes = await apiFetch("/api/members?status=active&limit=1000");
+          const mRes = await apiRequests.activeMembers();
           const mJson = await mRes.json();
           const membersList = mJson.data || [];
 
@@ -676,21 +675,6 @@ function NewEvent() {
         </CardFooter>
       </Card>
 
-      {/* Footer */}
-      <div className="w-full mt-12 text-center">
-        <div className="flex items-center justify-center text-xs text-muted-foreground">
-          Powered by{" "}
-          <a
-            href="https://socflow.app"
-            target="_blank"
-            className="text-foreground font-medium hover:underline ml-1"
-            rel="noreferrer"
-          >
-            Socflow
-          </a>
-        </div>
-      </div>
-
       {/* Confirmation Dialog */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent className="overflow-hidden">
@@ -701,7 +685,6 @@ function NewEvent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmSubmit}
               className="bg-linear-to-r from-[#2A43F8] to-[#4482ff]"

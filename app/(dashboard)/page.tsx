@@ -27,7 +27,7 @@ import {
 } from "recharts";
 import Loading from "@/components/layout/Loading";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -673,21 +673,6 @@ function Home() {
               </div>
             </>
           )}
-
-          {/* Single clean footer */}
-          <CardFooter className="flex flex-row px-0 py-4 w-full">
-            <div className="text-xs flex items-center text-muted-foreground">
-              Powered by{" "}
-              <a
-                href="https://socflow.app"
-                target="_blank"
-                className="ml-1 text-foreground font-medium hover:underline"
-                rel="noreferrer"
-              >
-                Socflow
-              </a>
-            </div>
-          </CardFooter>
         </motion.div>
       ) : (
         <Loading />
@@ -758,16 +743,6 @@ function Home() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsInductionEmailDialogOpen(false);
-                setInductionEmails("");
-              }}
-              disabled={sendingInductionEmails}
-            >
-              Cancel
-            </Button>
             <Button
               onClick={handleSendInductionEmails}
               disabled={sendingInductionEmails}

@@ -1,5 +1,7 @@
 "use client";
 
+import { apiRequests } from "@/lib/api/requests";
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -132,9 +134,7 @@ export function CertificateGenerator({
     let code: string;
     let existingCert: any = null;
     try {
-      const res = await fetch(
-        `/api/events/${eventId}/certifications?name=${encodeURIComponent(member.name)}`,
-      );
+      const res = await apiRequests.certificate(eventId, member.name);
       const json = await res.json();
       existingCert = json.certificate;
     } catch {}
@@ -144,14 +144,7 @@ export function CertificateGenerator({
     } else {
       code = generateCode();
       try {
-        await fetch(`/api/events/${eventId}/certifications`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: member.name,
-            code: code,
-          }),
-        });
+        await apiRequests.createCertificate(eventId, { name: member.name, code });
       } catch (insertError) {
         console.error("Error inserting certificate:", insertError);
       }
@@ -304,9 +297,6 @@ export function CertificateGenerator({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={loading}>
-              Cancel
-            </Button>
             <Button onClick={handleGenerate} disabled={loading}>
               {loading ? (
                 <>

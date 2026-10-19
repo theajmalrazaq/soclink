@@ -76,14 +76,12 @@ export function Navbar({ access, user, children }: NavbarProps) {
   }, []);
 
   const handleToggleCollapse = useCallback(() => {
-    setIsCollapsed((prev) => {
-      const newVal = !prev;
-      try {
-        localStorage.setItem("sidebar-collapsed", String(newVal));
-      } catch {}
-      return newVal;
-    });
-  }, []);
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    try {
+      localStorage.setItem("sidebar-collapsed", String(next));
+    } catch {}
+  }, [isCollapsed]);
 
   const handleSignOut = useCallback(async () => {
     setLoading(true);

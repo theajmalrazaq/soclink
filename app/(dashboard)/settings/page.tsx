@@ -1,5 +1,6 @@
 "use client";
-import { apiFetch } from "@/lib/apiFetch";
+import { apiRequests } from "@/lib/api/requests";
+import { socialHandle, socialProfileUrl } from "@/lib/socialProfiles";
 import { useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useOutletContext } from "@/lib/context";
@@ -20,7 +21,6 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -131,15 +131,14 @@ import { useEmailSettingsStore } from "@/stores/useEmailSettingsStore";
 
 function EmailSettings() {
   const router = useRouter();
-  const navigate = (path: string) => router.push(path);
   const outlet = useOutletContext();
   const access = outlet?.permissions;
 
   useEffect(() => {
     if (access && !canManageEmailSettings(access) && !canManageEmails(access)) {
-      navigate("/no-permission");
+      router.push("/no-permission");
     }
-  }, [access, navigate]);
+  }, [access, router]);
 
   const {
     activeSection,
@@ -187,7 +186,11 @@ function EmailSettings() {
 
   useEffect(() => {
     if (loadedProfile) {
-      setSocietyData(loadedProfile);
+      setSocietyData({
+        ...loadedProfile,
+        instagramUrl: socialHandle(loadedProfile.instagramUrl, "instagram"),
+        linkedinUrl: socialHandle(loadedProfile.linkedinUrl, "linkedin"),
+      });
       setFormData((prev) => buildSocietyEmailConfig(loadedProfile, prev));
     }
   }, [loadedProfile, setSocietyData, setFormData]);
@@ -252,23 +255,22 @@ function EmailSettings() {
     }
     setIsSavingSociety(true);
     try {
+      const instagramUrl = socialProfileUrl(societyData.instagramUrl, "instagram");
+      const linkedinUrl = socialProfileUrl(societyData.linkedinUrl, "linkedin");
+
       // 1. Update/Upsert societies table in Supabase
       let socId = societyData.id;
       try {
-        const socRes = await apiFetch("/api/societies", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: socId || undefined,
-            name: societyData.name.trim(),
-            username: societyData.username.trim().toLowerCase(),
-            email: societyData.email.trim(),
-            logo_url: societyData.logoUrl.trim(),
-            cover_url: societyData.coverUrl.trim(),
-            branding_color: societyData.brandingColor,
-            instagram_url: societyData.instagramUrl.trim() || null,
-            linkedin_url: societyData.linkedinUrl.trim() || null,
-          }),
+        const socRes = await apiRequests.saveSociety({
+          id: socId || undefined,
+          name: societyData.name.trim(),
+          username: societyData.username.trim().toLowerCase(),
+          email: societyData.email.trim(),
+          logo_url: societyData.logoUrl.trim(),
+          cover_url: societyData.coverUrl.trim(),
+          branding_color: societyData.brandingColor,
+          instagram_url: instagramUrl || null,
+          linkedin_url: linkedinUrl || null,
         });
         const socJson = await socRes.json();
         if (socJson.society?.id) socId = socJson.society.id;
@@ -284,8 +286,8 @@ function EmailSettings() {
         logoUrl: societyData.logoUrl.trim(),
         bannerUrl: societyData.coverUrl.trim(),
         primaryColor: societyData.brandingColor,
-        instagramUrl: societyData.instagramUrl.trim(),
-        linkedinUrl: societyData.linkedinUrl.trim(),
+        instagramUrl,
+        linkedinUrl,
         supportEmail: societyData.email.trim(),
       });
 
@@ -297,8 +299,8 @@ function EmailSettings() {
         logoUrl: societyData.logoUrl.trim(),
         bannerUrl: societyData.coverUrl.trim(),
         primaryColor: societyData.brandingColor,
-        instagramUrl: societyData.instagramUrl.trim(),
-        linkedinUrl: societyData.linkedinUrl.trim(),
+        instagramUrl,
+        linkedinUrl,
         supportEmail: societyData.email.trim(),
       }));
 
@@ -325,7 +327,11 @@ function EmailSettings() {
 
   const handleResetSociety = () => {
     if (loadedProfile) {
-      setSocietyData(loadedProfile);
+      setSocietyData({
+        ...loadedProfile,
+        instagramUrl: socialHandle(loadedProfile.instagramUrl, "instagram"),
+        linkedinUrl: socialHandle(loadedProfile.linkedinUrl, "linkedin"),
+      });
       setFormData((prev) => buildSocietyEmailConfig(loadedProfile, prev));
       toast.info("Profile changes discarded");
     }
@@ -801,7 +807,7 @@ function EmailSettings() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="socInsta" className="text-xs font-semibold">
-                        Instagram
+                        Instagram username
                       </Label>
                       <Input
                         id="socInsta"
@@ -809,14 +815,14 @@ function EmailSettings() {
                         onChange={(e) =>
                           setSocietyData((prev) => ({ ...prev, instagramUrl: e.target.value }))
                         }
-                        placeholder="https://instagram.com/your_handle"
+                        placeholder="your_handle"
                         className="h-9 text-xs"
                       />
                     </div>
 
                     <div className="space-y-1.5">
                       <Label htmlFor="socLinkedIn" className="text-xs font-semibold">
-                        LinkedIn
+                        LinkedIn page username
                       </Label>
                       <Input
                         id="socLinkedIn"
@@ -824,7 +830,7 @@ function EmailSettings() {
                         onChange={(e) =>
                           setSocietyData((prev) => ({ ...prev, linkedinUrl: e.target.value }))
                         }
-                        placeholder="https://linkedin.com/company/your-society"
+                        placeholder="your-society"
                         className="h-9 text-xs"
                       />
                     </div>
@@ -1418,7 +1424,6 @@ function EmailSettings() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReset}
               className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
@@ -1481,14 +1486,6 @@ function EmailSettings() {
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setTestDialogOpen(false)}
-              className="cursor-pointer"
-            >
-              Cancel
-            </Button>
             <Button
               type="button"
               onClick={handleSendTestEmail}

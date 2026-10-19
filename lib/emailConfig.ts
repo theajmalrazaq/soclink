@@ -299,10 +299,13 @@ export function getEmailConfig(): EmailConfig {
   return activeDbConfig;
 }
 
-export async function saveEmailConfig(newConfig: Partial<EmailConfig>): Promise<EmailConfig> {
+export async function saveEmailConfig(
+  newConfig: Partial<EmailConfig>,
+  replaceExisting = false,
+): Promise<EmailConfig> {
   const merged: EmailConfig = {
     ...DEFAULT_EMAIL_CONFIG,
-    ...activeDbConfig,
+    ...(replaceExisting ? {} : activeDbConfig),
     ...newConfig,
   };
 

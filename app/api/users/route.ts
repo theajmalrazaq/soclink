@@ -29,31 +29,54 @@ export async function POST(req: NextRequest) {
 
     if (access.bootstrap) {
       if (email.toLowerCase() !== access.user.email?.toLowerCase()) {
-        return NextResponse.json({ error: "Email does not match authenticated user" }, { status: 403 });
+        return NextResponse.json(
+          { error: "Email does not match authenticated user" },
+          { status: 403 },
+        );
       }
       const created = await db.transaction(async (tx) => {
         await tx.execute(sql`select pg_advisory_xact_lock(702371204)`);
         const existing = await tx.select({ id: users.id }).from(users).limit(1);
         if (existing.length) return null;
-        const rows = await tx.insert(users).values({
-          name: name.trim(),
-          email: access.user.email!,
-          user_id: access.user.id,
-          role: "admin",
-          permissions: JSON.stringify(DEFAULT_PERMISSIONS),
-          status: true,
-        }).returning();
+        const rows = await tx
+          .insert(users)
+          .values({
+            name: name.trim(),
+            email: access.user.email!,
+            user_id: access.user.id,
+            role: "admin",
+            permissions: JSON.stringify(DEFAULT_PERMISSIONS),
+            status: true,
+          })
+          .returning();
         return rows[0];
       });
-      if (!created) return NextResponse.json({ error: "Setup has already been completed" }, { status: 409 });
+      if (!created)
+        return NextResponse.json({ error: "Setup has already been completed" }, { status: 409 });
       return NextResponse.json({ success: true, user: created });
+    }
+
+    const existingEmail = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email.trim()))
+      .limit(1);
+    if (existingEmail.length) {
+      return NextResponse.json(
+        { error: "An account with this email already exists" },
+        { status: 409 },
+      );
     }
 
     let authUserId: string | null | undefined = null;
     if (typeof password === "string" && password) {
-      const auth = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+      const auth = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: { persistSession: false, autoRefreshToken: false },
+        },
+      );
       const { data: authData, error } = await auth.auth.signUp({
         email,
         password,
@@ -63,15 +86,20 @@ export async function POST(req: NextRequest) {
       authUserId = authData?.user?.id;
     }
 
-    const canAssignRoles = hasPermission(access.account!.permissions || access.account!.role, "users", "editRole");
+    const canAssignRoles = hasPermission(
+      access.account!.permissions || access.account!.role,
+      "users",
+      "editRole",
+    );
     const payload = {
       name,
       email,
       role: canAssignRoles ? role : "member",
-      permissions:
-        canAssignRoles
-          ? (typeof permissionMatrix === "object" ? JSON.stringify(permissionMatrix) : permissionMatrix)
-          : JSON.stringify(NO_PERMISSIONS),
+      permissions: canAssignRoles
+        ? typeof permissionMatrix === "object"
+          ? JSON.stringify(permissionMatrix)
+          : permissionMatrix
+        : JSON.stringify(NO_PERMISSIONS),
       user_id: authUserId,
     };
 
@@ -81,6 +109,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, user: created });
   } catch (err: any) {
     console.error("POST /api/users error:", err);
+    if (err?.cause?.code === "23505") {
+      return NextResponse.json(
+        { error: "An account with this email already exists" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
@@ -113,8 +147,23 @@ export async function DELETE(req: NextRequest) {
   if (access instanceof NextResponse) return access;
   const { searchParams } = new URL(req.url);
   const id = parseInt(searchParams.get("id") || "0", 10);
+  if (!Number.isSafeInteger(id) || id < 1) {
+    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+  }
   try {
-    await db.delete(users).where(eq(users.id, id));
+    const deleted = await db.transaction(async (tx) => {
+      const [target] = await tx.select().from(users).where(eq(users.id, id)).limit(1);
+      if (!target) return false;
+
+      // The Auth deletion trigger removes this profile and, for the final
+      // account, the installation's shared records.
+      if (target.user_id) {
+        await tx.execute(sql`delete from auth.users where id::text = ${target.user_id}`);
+      }
+      await tx.delete(users).where(eq(users.id, id));
+      return true;
+    });
+    if (!deleted) return NextResponse.json({ error: "User not found" }, { status: 404 });
     return NextResponse.json({ success: true, id });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
