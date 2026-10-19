@@ -216,7 +216,7 @@ function Home() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full flex flex-col items-start px-2 py-4 space-y-6"
+          className="w-full flex flex-col items-start px-2 pt-4 pb-36 space-y-6"
         >
           {/* Quick Settings Row */}
           {hasPermission(access, "dashboard", "quickSettings") && (
@@ -465,13 +465,13 @@ function Home() {
                         tickLine={false}
                         axisLine={false}
                         tickMargin={12}
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                       />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
                         tickMargin={12}
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                         allowDecimals={false}
                       />
                       <Tooltip
@@ -506,14 +506,14 @@ function Home() {
                         dataKey="registrations"
                         type="monotone"
                         fill="url(#curveFillPrimary)"
-                        stroke="hsl(var(--foreground))"
+                        stroke="var(--foreground)"
                         strokeWidth={1.8}
                       />
                       <Area
                         dataKey="activity"
                         type="monotone"
                         fill="url(#curveFillSecondary)"
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         strokeWidth={1.4}
                       />
                     </AreaChart>
@@ -537,7 +537,7 @@ function Home() {
                     >
                       <CalendarArrowDown className="w-3.5 h-3.5" />
                       Recent Events
-                      <span className="px-1.5 py-0.2 rounded-full bg-muted text-[10px] font-semibold">
+                      <span className="px-1.5 py-0.5 rounded-full bg-muted text-[10px] font-semibold">
                         {responses.length}
                       </span>
                     </button>

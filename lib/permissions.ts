@@ -212,6 +212,17 @@ export function hasPermission(
   return Boolean(pagePerm.sub?.[subKey]);
 }
 
+export function canUseAssistant(permInput: any): boolean {
+  const actions: Array<[string, string]> = [
+    ["events", "createEvent"], ["events", "editEvent"], ["events", "deleteEvent"],
+    ["leads", "addMember"], ["leads", "changeStatus"], ["leads", "deleteLead"],
+    ["members", "changeStatus"], ["members", "deleteMember"],
+    ["inductions", "changeStatus"], ["inductions", "deleteResponse"],
+    ["emails", "changeStatus"], ["emails", "deleteEmail"],
+  ];
+  return actions.some(([section, permission]) => hasPermission(permInput, section, permission));
+}
+
 export function canManageEvents(permInput: any): boolean {
   return hasPermission(permInput, "events");
 }

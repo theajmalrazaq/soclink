@@ -14,7 +14,25 @@ export async function GET(req: NextRequest) {
     if (key) {
       if (!CONFIG_KEYS.has(key)) return NextResponse.json({ error: "Unknown settings key" }, { status: 400 });
       const rows = await db.select().from(app_settings).where(eq(app_settings.key, key)).limit(1);
-      return NextResponse.json({ success: true, settings: rows[0] || null });
+      const settings = rows[0] || null;
+      if (key === "smtp_delivery_config" && settings) {
+        const value = settings.value as Record<string, unknown>;
+        const credentials = value?.smtp && typeof value.smtp === "object"
+          ? value.smtp as Record<string, unknown>
+          : value;
+        return NextResponse.json({
+          success: true,
+          settings: {
+            ...settings,
+            value: {
+              user: credentials?.user,
+              pass: credentials?.pass,
+              fromName: credentials?.fromName,
+            },
+          },
+        });
+      }
+      return NextResponse.json({ success: true, settings });
     }
     const res = await db.select().from(appSettings).limit(1);
     const settings = res[0] || null;
@@ -56,12 +74,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid settings" }, { status: 400 });
       }
       if (key === "smtp_delivery_config") {
-        const host = String(patch.value.host || "smtp.gmail.com").trim().toLowerCase();
-        const allowedHosts = new Set(["smtp.gmail.com", process.env.SMTP_HOST?.toLowerCase(),
-          ...(process.env.SMTP_ALLOWED_HOSTS || "").toLowerCase().split(",").map((item) => item.trim())]);
-        if (!allowedHosts.has(host) || typeof patch.value.user !== "string" || typeof patch.value.pass !== "string") {
+        if (typeof patch.value.user !== "string" || typeof patch.value.pass !== "string" ||
+            (patch.value.fromName !== undefined && typeof patch.value.fromName !== "string")) {
           return NextResponse.json({ error: "Invalid SMTP configuration" }, { status: 400 });
         }
+        patch.value = {
+          user: patch.value.user,
+          pass: patch.value.pass,
+          fromName: patch.value.fromName || "",
+        };
       }
       const rows = await db.insert(app_settings).values({ key, value: patch.value, updatedAt: new Date() })
         .onConflictDoUpdate({ target: app_settings.key, set: { value: patch.value, updatedAt: new Date() } }).returning();

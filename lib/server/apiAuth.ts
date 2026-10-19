@@ -2,7 +2,7 @@ import { createClient, type User } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { hasPermission } from "@/lib/permissions";
+import { canUseAssistant, hasPermission } from "@/lib/permissions";
 
 type AccessRule = [string, string?];
 
@@ -10,6 +10,16 @@ function ruleFor(path: string, method: string): AccessRule | null {
   if (path === "/api/me" && method === "GET") return ["me"];
   if (path === "/api/SendEmail" && method === "POST") return ["emails", "sendEmail"];
   if (path === "/api/dashboard" && method === "GET") return ["dashboard", "viewStats"];
+  if (path === "/api/assistant/draft" && method === "POST")
+    return ["dashboard", "viewStats"];
+  if (path === "/api/assistant/targets" && method === "GET")
+    return ["dashboard", "viewStats"];
+  if (path === "/api/assistant/execute" && method === "POST")
+    return ["dashboard", "viewStats"];
+  if (path === "/api/assistant/credentials" && ["GET", "POST", "DELETE"].includes(method))
+    return ["emails", "manageSettings"];
+  if (path === "/api/assistant/credentials/test" && method === "POST")
+    return ["emails", "manageSettings"];
   if (path === "/api/settings") {
     return method === "GET" || method === "POST" ? ["settings"] : null;
   }
@@ -145,6 +155,8 @@ export async function authorizeApiRequest(req: NextRequest) {
           "dashboard",
           req.method === "POST" ? "quickSettings" : "viewStats",
         );
+  } else if (["/api/assistant/draft", "/api/assistant/targets", "/api/assistant/execute"].includes(path)) {
+    allowed = canUseAssistant(permissions);
   } else if (path === "/api/SendEmail") {
     allowed =
       hasPermission(permissions, "emails", "sendEmail") ||

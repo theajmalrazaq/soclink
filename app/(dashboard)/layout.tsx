@@ -6,6 +6,7 @@ import { useUserSession } from "@/hooks/queries/useAuth";
 import { Navbar } from "@/components/layout/Navbar";
 import { DashboardContext } from "@/lib/context";
 import Loading from "@/components/layout/Loading";
+import AiCommandComposer from "@/components/dashboard/AiCommandComposer";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <DashboardContext.Provider value={contextValue}>
       <Navbar access={permissions} user={currentUser}>
         <Suspense fallback={<Loading />}>{children}</Suspense>
+        {session?.isAuthenticated && <AiCommandComposer access={permissions} />}
       </Navbar>
     </DashboardContext.Provider>
   );

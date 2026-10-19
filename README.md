@@ -5,7 +5,7 @@ Socflow is an open-source, database-driven society management and email operatio
 For website integrations and the complete HTTP endpoint reference, see [CRM API documentation](docs/API.md).
 
 ## ✨ Key Features
-- **BYO SMTP Engine**: Send transactional and bulk emails directly using your Gmail App Passwords or custom SMTP configurations.
+- **SMTP Engine**: Send transactional and bulk emails using sender credentials in Settings and server-managed SMTP transport settings.
 - **Dynamic Email Suite**: 8 fully customizable email templates (Announcements, Inductions, Interviews, Certificates, Selections, Rejections, Events, and Contact Responses) synchronized with Postgres DB.
 - **Member & Induction Management**: Organize leads, applicants, recruitment stages, interviews, and event attendees.
 - **Role-Based Access Control**: Secure permission levels for admins, leads, and event managers.
@@ -30,9 +30,27 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:6543/postgres"
 NEXT_PUBLIC_SUPABASE_URL="https://[YOUR-PROJECT].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
 
-# Optional: allow custom SMTP servers configured in Settings
-SMTP_ALLOWED_HOSTS="smtp.gmail.com,mail.example.org"
+# Optional server-managed SMTP transport (defaults to Gmail on port 465)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="465"
+SMTP_SECURE="true"
+
+# Server-only key used to encrypt the GroqCloud credential in app_settings
+SETTINGS_ENCRYPTION_KEY="[64-HEX-CHARACTERS]"
+# Optional fallback if a key is not saved through Settings
+GROQ_API_KEY="[YOUR-GROQ-API-KEY]"
+GROQ_MODEL="openai/gpt-oss-20b"
 ```
+
+The dashboard assistant prepares editable event, competition, lead category, and lead member drafts.
+It writes event and competition descriptions from the details you provide, asks for missing essentials,
+and creates a record only after you confirm the draft. Generate `SETTINGS_ENCRYPTION_KEY`
+with `openssl rand -hex 32` and set it on every server instance. In **Settings → GroqCloud API**,
+paste the GroqCloud key and save it. The key is encrypted with AES-256-GCM in `app_settings`;
+the settings API returns only its status. Use **Test API** to check an entered key before
+saving it, or to check the saved key. Keep the encryption key stable across deployments,
+or saved credentials cannot be decrypted. `GROQ_API_KEY` remains an optional server-only fallback.
+Never use a `NEXT_PUBLIC_` prefix for either key.
 
 ### 3. Database Management (Drizzle ORM)
 

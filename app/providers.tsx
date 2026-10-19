@@ -13,7 +13,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="vite-ui-theme">
         <MotionConfig reducedMotion="user">
           {children}
-          <div id="sonner-root" />
           <Toaster />
         </MotionConfig>
       </ThemeProvider>

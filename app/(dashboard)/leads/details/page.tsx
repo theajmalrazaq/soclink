@@ -19,7 +19,7 @@ import {
   Edit,
   Users,
   Phone,
-  Linkedin,
+  BriefcaseBusiness as Linkedin,
   User,
   ChevronDown,
   Loader,

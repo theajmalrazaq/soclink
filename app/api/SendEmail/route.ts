@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
       .where(eq(app_settings.key, "smtp_delivery_config")).limit(1);
     const saved = rows[0]?.value && typeof rows[0].value === "object" ? rows[0].value as Record<string, unknown> : {};
     const configured = saved.user && saved.pass ? saved : null;
-    const smtpHost = String(configured?.host || process.env.SMTP_HOST || "smtp.gmail.com").trim().toLowerCase();
-    const smtpPort = Number(configured?.port || process.env.SMTP_PORT || 465);
-    const smtpSecure = smtpPort === 465 ? true : Boolean(configured?.secure ?? process.env.SMTP_SECURE === "true");
+    const smtpHost = String(process.env.SMTP_HOST || "smtp.gmail.com").trim().toLowerCase();
+    const smtpPort = Number(process.env.SMTP_PORT || 465);
+    const smtpSecure = smtpPort === 465 ? true : process.env.SMTP_SECURE === "true";
     const smtpUser = String(configured?.user || process.env.SMTP_USER || "").trim();
     const smtpPass = String(configured?.pass || process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
     const allowedHosts = new Set(["smtp.gmail.com", process.env.SMTP_HOST?.toLowerCase(),

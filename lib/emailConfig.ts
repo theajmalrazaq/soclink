@@ -427,18 +427,12 @@ export function useEmailConfig() {
 export interface SmtpConfig {
   user: string;
   pass: string;
-  host: string;
-  port: number;
-  secure: boolean;
   fromName: string;
 }
 
 export const DEFAULT_SMTP_CONFIG: SmtpConfig = {
   user: "",
   pass: "",
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
   fromName: "",
 };
 
@@ -450,10 +444,14 @@ export async function fetchSmtpConfigFromDB(): Promise<SmtpConfig> {
     const res = await apiFetch("/api/settings?key=smtp_delivery_config");
     if (res.ok) {
       const data = await res.json();
-      if (data?.settings?.value?.smtp) {
+      const saved = data?.settings?.value;
+      const config = saved?.smtp || saved;
+      if (config && typeof config === "object") {
         activeSmtpConfig = {
           ...DEFAULT_SMTP_CONFIG,
-          ...data.settings.value.smtp,
+          user: typeof config.user === "string" ? config.user : "",
+          pass: typeof config.pass === "string" ? config.pass : "",
+          fromName: typeof config.fromName === "string" ? config.fromName : "",
         };
       }
     }
@@ -473,9 +471,9 @@ export function getSmtpConfig(): SmtpConfig {
 
 export async function saveSmtpConfig(newSmtp: Partial<SmtpConfig>): Promise<SmtpConfig> {
   const merged: SmtpConfig = {
-    ...DEFAULT_SMTP_CONFIG,
-    ...activeSmtpConfig,
-    ...newSmtp,
+    user: newSmtp.user ?? activeSmtpConfig.user,
+    pass: newSmtp.pass ?? activeSmtpConfig.pass,
+    fromName: newSmtp.fromName ?? activeSmtpConfig.fromName,
   };
   try {
     const response = await apiFetch("/api/settings?key=smtp_delivery_config", {

@@ -248,7 +248,7 @@ function PermissionForm({ currentMatrix, matrixSetter, togglePageMaster, toggleS
                         {config.title}
                       </h4>
                       {pageState.enabled && totalSubs > 0 && (
-                        <span className="text-[10px] font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 shrink-0">
+                        <span className="text-[10px] font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
                           {activeSubs}/{totalSubs}
                         </span>
                       )}

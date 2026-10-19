@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +54,8 @@ import {
   buildSocietyEmailConfig,
 } from "@/lib/emailConfig";
 import { renderEmailTemplate, sendEmail } from "@/lib/emailService";
-import { canManageEmailSettings, canManageEmails } from "@/lib/permissions";
+import { canManageEmailSettings, canManageEmails, hasPermission } from "@/lib/permissions";
+import GroqSettings from "@/components/settings/GroqSettings";
 
 const SAMPLE_TEMPLATE_PROPS = {
   announcement: {
@@ -355,14 +355,9 @@ function EmailSettings() {
       return;
     }
     try {
-      const portNum = Number(smtpData.port) || 465;
-      const isSecure = portNum === 465 ? true : Boolean(smtpData.secure);
       await updateSmtpMutation.mutateAsync({
         user: smtpData.user.trim(),
         pass: smtpData.pass.trim().replace(/\s+/g, ""),
-        host: smtpData.host.trim() || "smtp.gmail.com",
-        port: portNum,
-        secure: isSecure,
         fromName: smtpData.fromName.trim() || formData.brandName || "Society Team",
       });
     } catch {}
@@ -375,15 +370,10 @@ function EmailSettings() {
     }
     setTestingSmtp(true);
     try {
-      const portNum = Number(smtpData.port) || 465;
-      const isSecure = portNum === 465 ? true : Boolean(smtpData.secure);
       // Save credentials first
       await updateSmtpMutation.mutateAsync({
         user: smtpData.user.trim(),
         pass: smtpData.pass.trim().replace(/\s+/g, ""),
-        host: smtpData.host.trim() || "smtp.gmail.com",
-        port: portNum,
-        secure: isSecure,
         fromName: smtpData.fromName.trim() || formData.brandName || "Society Team",
       });
 
@@ -503,6 +493,21 @@ function EmailSettings() {
             <Server className="size-4 text-primary" />
             <span>SMTP & Delivery</span>
           </button>
+
+          {hasPermission(access, "emails", "manageSettings") && (
+            <button
+              type="button"
+              onClick={() => setActiveSection("groq")}
+              className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+                activeSection === "groq"
+                  ? "bg-background text-foreground shadow-xs border-border"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted border-border/40"
+              }`}
+            >
+              <Sparkles className="size-4 text-primary" />
+              <span>GroqCloud API</span>
+            </button>
+          )}
         </div>
 
         {/* Action Buttons for Society Profile */}
@@ -1118,7 +1123,7 @@ function EmailSettings() {
                 </div>
 
                 {/* Template Selector Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1 no-scrollbar">
+                <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1">
                   {TEMPLATE_OPTIONS.map((t) => (
                     <Button
                       key={t.id}
@@ -1170,8 +1175,8 @@ function EmailSettings() {
               <CardHeader className="text-left pb-4">
                 <CardTitle className="text-xl font-bold">SMTP Mail Delivery Engine</CardTitle>
                 <CardDescription>
-                  Configure your own custom Gmail account or SMTP server to dispatch official
-                  chapter emails directly from your inbox.
+                  Enter the sender account credentials. The SMTP server and encryption are
+                  configured by the system.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5 text-left">
@@ -1256,59 +1261,6 @@ function EmailSettings() {
                     />
                   </div>
 
-                  {/* Advanced Host & Port Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="smtpHost" className="text-xs font-semibold">
-                        SMTP Host Endpoint
-                      </Label>
-                      <Input
-                        id="smtpHost"
-                        value={smtpData.host}
-                        onChange={(e) => setSmtpData((prev) => ({ ...prev, host: e.target.value }))}
-                        placeholder="smtp.gmail.com"
-                        className="h-10 font-mono text-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="smtpPort" className="text-xs font-semibold">
-                        SMTP Port
-                      </Label>
-                      <Input
-                        id="smtpPort"
-                        type="number"
-                        value={smtpData.port}
-                        onChange={(e) => {
-                          const p = Number(e.target.value);
-                          setSmtpData((prev) => ({
-                            ...prev,
-                            port: p,
-                            secure: p === 465 ? true : p === 587 ? false : prev.secure,
-                          }));
-                        }}
-                        placeholder="465"
-                        className="h-10 font-mono text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  {/* SSL Switch */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <div className="space-y-0.5">
-                      <Label className="text-xs font-semibold">Require SSL/TLS Encryption</Label>
-                      <p className="text-[11px] text-muted-foreground">
-                        Required for Port 465 (Recommended for Gmail)
-                      </p>
-                    </div>
-                    <Switch
-                      checked={smtpData.secure || Number(smtpData.port) === 465}
-                      onCheckedChange={(checked) =>
-                        setSmtpData((prev) => ({ ...prev, secure: checked }))
-                      }
-                    />
-                  </div>
-
                   <button type="submit" className="hidden" tabIndex={-1} aria-hidden="true" />
                 </form>
               </CardContent>
@@ -1321,9 +1273,7 @@ function EmailSettings() {
             <Card className="rounded-2xl bg-card/80 border border-border/60 backdrop-blur-md shadow-xs">
               <CardHeader className="text-left pb-3 border-b border-border/40">
                 <CardTitle className="text-base font-bold">SMTP Engine Status</CardTitle>
-                <CardDescription className="text-xs">
-                  Real-time transport diagnostics
-                </CardDescription>
+                <CardDescription className="text-xs">Sender account status</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4 text-left">
                 <div className="space-y-2">
@@ -1331,18 +1281,6 @@ function EmailSettings() {
                     <span className="text-muted-foreground">Configured Account:</span>
                     <span className="font-medium text-foreground truncate max-w-[200px]">
                       {smtpData.user || "Not configured"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Server Host:</span>
-                    <span className="font-mono text-foreground">
-                      {smtpData.host || "smtp.gmail.com"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Port & Encryption:</span>
-                    <span className="font-mono text-foreground">
-                      {smtpData.port} ({smtpData.secure ? "SSL" : "TLS"})
                     </span>
                   </div>
                 </div>
@@ -1411,6 +1349,10 @@ function EmailSettings() {
             </Card>
           </div>
         </div>
+      )}
+
+      {activeSection === "groq" && hasPermission(access, "emails", "manageSettings") && (
+        <GroqSettings />
       )}
 
       {/* Reset Confirmation Alert Dialog */}

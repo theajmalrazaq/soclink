@@ -131,7 +131,7 @@ Lead member fields: `name`, `avatar`, `designation`, `linkedin`, `email`, `phone
 | GET | `/api/settings?key={key}` | `key=email_template_config` or `smtp_delivery_config` | `{ success, settings }`; `null` if absent | `emails.manageSettings` |
 | POST | `/api/settings?key={key}` | `{ "key": "email_template_config", "value": { ... } }` | `{ success, settings }` | `emails.manageSettings` |
 
-Society fields: `name`, `username`, and `email` are required for creation; optional fields are `logo_url`, `cover_url`, `branding_color`, `instagram_url`, `linkedin_url`, and `website_url`. Social profile fields currently accept URL strings. For keyed settings, `value` must be an object. SMTP settings require `user` and `pass` strings and a host allowed by the server configuration. Treat SMTP settings and responses as secrets; only expose them to authorized administrators.
+Society fields: `name`, `username`, and `email` are required for creation; optional fields are `logo_url`, `cover_url`, `branding_color`, `instagram_url`, `linkedin_url`, and `website_url`. Social profile fields currently accept URL strings. For keyed settings, `value` must be an object. SMTP settings accept sender `user`, `pass`, and optional `fromName`; host, port, and encryption come only from server environment variables. Treat SMTP settings and responses as secrets; only expose them to authorized administrators.
 
 ### CRM users
 

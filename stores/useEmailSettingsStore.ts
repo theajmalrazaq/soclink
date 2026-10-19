@@ -17,9 +17,6 @@ const INITIAL_SOCIETY_DATA = {
 const INITIAL_SMTP_DATA = {
   user: "",
   pass: "",
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
   fromName: "",
 };
 

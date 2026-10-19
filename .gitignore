@@ -5,6 +5,7 @@
 
 # Next.js build and outputs
 /.next/
+/.next-dev/
 /out/
 /build
 dist

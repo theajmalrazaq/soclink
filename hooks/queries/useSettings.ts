@@ -56,9 +56,6 @@ export function useSmtpConfigQuery() {
         loadedSmtp || {
           user: "",
           pass: "",
-          host: "smtp.gmail.com",
-          port: 465,
-          secure: true,
           fromName: "",
         }
       );
